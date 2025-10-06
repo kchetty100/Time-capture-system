@@ -944,22 +944,25 @@
             }
             
             function saveDraft() {
-                const formData = new FormData(document.getElementById('timesheetForm'));
-                formData.append('status', 'draft');
+                const data = collectTimesheetData();
+                data.status = 'draft';
                 
                 fetch('/employee/timesheets', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         alert('Timesheet saved as draft');
-                        if (data.timesheetId) {
-                            document.getElementById('timesheetId').value = data.timesheetId;
+                        if (data.timesheet_id) {
+                            document.getElementById('timesheetId').value = data.timesheet_id;
                         }
                     } else {
-                        alert('Error saving timesheet: ' + (data.message || 'Unknown error'));
+                        alert('Error saving timesheet: ' + (data.error || 'Unknown error'));
                     }
                 })
                 .catch(error => {
@@ -969,12 +972,15 @@
             }
             
             function submitTimesheet() {
-                const formData = new FormData(document.getElementById('timesheetForm'));
-                formData.append('status', 'submitted');
+                const data = collectTimesheetData();
+                data.status = 'submitted';
                 
                 fetch('/employee/timesheets', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -982,13 +988,59 @@
                         alert('Timesheet submitted successfully');
                         window.location.href = '/employee/timesheets';
                     } else {
-                        alert('Error submitting timesheet: ' + (data.message || 'Unknown error'));
+                        alert('Error submitting timesheet: ' + (data.error || 'Unknown error'));
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     alert('Error submitting timesheet');
                 });
+            }
+            
+            function collectTimesheetData() {
+                const weekEnding = document.getElementById('weekEnding').value;
+                const timeEntries = [];
+                
+                // Collect data from each day row
+                document.querySelectorAll('.timesheet-row').forEach(row => {
+                    const date = row.getAttribute('data-date');
+                    const dayOfWeek = row.querySelector('.day-cell').textContent.trim();
+                    
+                    // Get first time period
+                    const timeIn1 = row.querySelector('input[name*="time_in_1_"]').value;
+                    const timeOut1 = row.querySelector('input[name*="time_out_1_"]').value;
+                    const hours1 = parseFloat(row.querySelector('input[name*="hours_1_"]').value) || 0;
+                    const description1 = row.querySelector('input[name*="description_"]').value.trim();
+                    
+                    // Get second time period
+                    const timeIn2 = row.querySelector('input[name*="time_in_2_"]').value;
+                    const timeOut2 = row.querySelector('input[name*="time_out_2_"]').value;
+                    const hours2 = parseFloat(row.querySelector('input[name*="hours_2_"]').value) || 0;
+                    
+                    // Only add entries if there are hours worked
+                    if (hours1 > 0) {
+                        timeEntries.push({
+                            project: 'Work', // Default project name
+                            date: date,
+                            hours: hours1,
+                            description: description1 || `${dayOfWeek} work`
+                        });
+                    }
+                    
+                    if (hours2 > 0) {
+                        timeEntries.push({
+                            project: 'Work', // Default project name
+                            date: date,
+                            hours: hours2,
+                            description: description1 || `${dayOfWeek} work (Period 2)`
+                        });
+                    }
+                });
+                
+                return {
+                    week_ending: weekEnding,
+                    time_entries: timeEntries
+                };
             }
         });
     </script>

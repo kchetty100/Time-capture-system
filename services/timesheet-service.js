@@ -3,7 +3,7 @@ const timeEntryRepository = require('../repositories/time-entry-repository');
 const moment = require('moment');
 
 class TimesheetService {
-  async createTimesheet(userId, weekEnding, timeEntries) {
+  async createTimesheet(userId, weekEnding, timeEntries, status = 'submitted') {
     // Validate week ending date
     const weekEndingDate = moment(weekEnding, 'YYYY-MM-DD');
     if (!weekEndingDate.isValid()) {
@@ -20,26 +20,30 @@ class TimesheetService {
       throw new Error('Timesheet already exists for this week');
     }
 
-    // Validate time entries
-    this.validateTimeEntries(timeEntries);
+    // Validate time entries (only if not empty)
+    if (timeEntries && timeEntries.length > 0) {
+      this.validateTimeEntries(timeEntries);
+    }
 
     // Create timesheet
     const timesheet = await timesheetRepository.create({
       user_id: userId,
       week_ending: weekEnding,
-      status: 'pending',
+      status: status,
       notes: null
     });
 
     // Create time entries
-    for (const entry of timeEntries) {
-      await timeEntryRepository.create({
-        timesheet_id: timesheet.id,
-        project: entry.project,
-        date: entry.date,
-        hours: entry.hours,
-        description: entry.description || null
-      });
+    if (timeEntries && timeEntries.length > 0) {
+      for (const entry of timeEntries) {
+        await timeEntryRepository.create({
+          timesheet_id: timesheet.id,
+          project: entry.project,
+          date: entry.date,
+          hours: entry.hours,
+          description: entry.description || null
+        });
+      }
     }
 
     return timesheet;

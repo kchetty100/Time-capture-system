@@ -172,10 +172,11 @@ router.get('/timesheets/:id', async (req, res) => {
 // Save timesheet
 router.post('/timesheets', [
   body('week_ending').isISO8601(),
-  body('time_entries').isArray({ min: 1 }),
+  body('time_entries').isArray({ min: 0 }),
   body('time_entries.*.project').notEmpty().trim(),
   body('time_entries.*.date').isISO8601(),
-  body('time_entries.*.hours').isFloat({ min: 0.1, max: 24 })
+  body('time_entries.*.hours').isFloat({ min: 0.1, max: 24 }),
+  body('status').optional().isIn(['draft', 'submitted'])
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -186,7 +187,7 @@ router.post('/timesheets', [
       });
     }
 
-    const { week_ending, time_entries } = req.body;
+    const { week_ending, time_entries, status = 'submitted' } = req.body;
     
     // Check if timesheet already exists
     const existingTimesheet = await timesheetService.getTimesheetsByUser(req.user.id)
@@ -201,13 +202,14 @@ router.post('/timesheets', [
     const timesheet = await timesheetService.createTimesheet(
       req.user.id, 
       week_ending, 
-      time_entries
+      time_entries,
+      status
     );
 
     res.json({ 
       success: true, 
       timesheet_id: timesheet.id,
-      message: 'Timesheet created successfully' 
+      message: `Timesheet ${status} successfully` 
     });
 
   } catch (error) {
