@@ -47,7 +47,7 @@
     </header>
 
     <main class="main">
-        <div class="container-fluid">
+        <div class="container">
             <% if (typeof success !== 'undefined' && success) { %>
                 <div class="alert alert-success">
                     <i class="fas fa-check-circle"></i>
@@ -504,12 +504,6 @@
             color: var(--primary-blue);
         }
 
-        .container-fluid {
-            width: 100%;
-            max-width: none;
-            padding: 0 1rem;
-        }
-
         .timesheet-table-container {
             background: var(--white);
             border-radius: var(--border-radius);
@@ -522,7 +516,7 @@
         .timesheet-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 100%;
+            min-width: 1000px;
         }
 
         .timesheet-table th {
@@ -591,13 +585,15 @@
         .day-cell {
             font-weight: 600;
             color: var(--dark-gray);
-            width: 8%;
+            width: 10%;
+            min-width: 80px;
         }
 
         .date-cell {
             font-weight: 500;
             color: var(--primary-blue);
-            width: 10%;
+            width: 12%;
+            min-width: 100px;
         }
 
         .time-input, .hours-input, .description-input {
@@ -623,27 +619,33 @@
         }
 
         .time-cell {
-            width: 7%;
+            width: 8%;
+            min-width: 70px;
         }
 
         .hours-cell {
-            width: 6%;
+            width: 7%;
+            min-width: 60px;
         }
 
         .daily-total-cell {
-            width: 6%;
+            width: 7%;
+            min-width: 60px;
         }
 
         .week-total-cell {
-            width: 6%;
+            width: 7%;
+            min-width: 60px;
         }
 
         .description-cell {
-            width: 25%;
+            width: 20%;
+            min-width: 200px;
         }
 
         .actions-cell {
-            width: 4%;
+            width: 5%;
+            min-width: 50px;
         }
 
         .daily-total, .week-total {
@@ -703,16 +705,20 @@
             color: var(--primary-blue);
         }
 
-        /* Full width responsive design */
+        /* Responsive design for standard container */
         @media (max-width: 768px) {
-            .container-fluid {
-                padding: 0 0.5rem;
+            .timesheet-table {
+                min-width: 800px;
             }
             
             .timesheet-table th,
             .timesheet-table td {
                 padding: 0.25rem;
                 font-size: 0.75rem;
+            }
+            
+            .description-cell {
+                min-width: 150px;
             }
         }
 
