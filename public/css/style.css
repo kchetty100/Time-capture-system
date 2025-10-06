@@ -116,7 +116,9 @@ body {
 
 .nav-links {
     display: flex;
-    gap: 1.5rem;
+    gap: 1rem;
+    flex-wrap: nowrap;
+    white-space: nowrap;
 }
 
 .nav-link {
@@ -129,6 +131,8 @@ body {
     border-radius: var(--border-radius);
     transition: var(--transition);
     font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .nav-link:hover {
