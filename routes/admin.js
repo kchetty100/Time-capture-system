@@ -46,7 +46,12 @@ router.get('/', async (req, res) => {
     res.render('admin/dashboard', {
       title: 'Admin Dashboard - REVERSIDE Time Tracker',
       user: req.user,
-      stats: { totalTimesheets: 0, pendingTimesheets: 0, approvedTimesheets: 0, rejectedTimesheets: 0 },
+      stats: [
+        { status: 'pending', count: 0 },
+        { status: 'approved', count: 0 },
+        { status: 'rejected', count: 0 },
+        { status: 'total', count: 0 }
+      ],
       pendingTimesheets: [],
       weeklyStats: [],
       employeeCount: 0
