@@ -79,14 +79,18 @@ router.get('/timesheets', async (req, res) => {
 
 // Create timesheet form
 router.get('/timesheets/new', (req, res) => {
-  const weekEnding = req.query.week_ending || timesheetService.getCurrentWeekEnding();
-  const weekStart = timesheetService.getWeekStart(weekEnding);
+  const monthYear = req.query.month_year || timesheetService.getCurrentMonthYear();
+  const monthStart = timesheetService.getMonthStart(monthYear);
+  const monthEnd = timesheetService.getMonthEnd(monthYear);
   
   res.render('employee/timesheet-form', {
     title: 'New Timesheet - REVERSIDE Time Tracker',
     user: req.user,
-    weekEnding,
-    weekStart,
+    monthYear,
+    monthStart,
+    monthEnd,
+    weekEnding: monthEnd, // Keep for backward compatibility
+    weekStart: monthStart, // Keep for backward compatibility
     timesheet: null,
     timeEntries: [],
     isEdit: false
@@ -171,7 +175,7 @@ router.get('/timesheets/:id', async (req, res) => {
 
 // Save timesheet
 router.post('/timesheets', [
-  body('week_ending').isISO8601(),
+  body('month_year').matches(/^\d{4}-\d{2}$/),
   body('time_entries').isArray({ min: 0 }),
   body('time_entries.*.project').notEmpty().trim(),
   body('time_entries.*.date').isISO8601(),
@@ -187,21 +191,21 @@ router.post('/timesheets', [
       });
     }
 
-    const { week_ending, time_entries, status = 'submitted' } = req.body;
+    const { month_year, time_entries, status = 'submitted' } = req.body;
     
     // Check if timesheet already exists
     const existingTimesheet = await timesheetService.getTimesheetsByUser(req.user.id)
-      .then(timesheets => timesheets.find(ts => ts.week_ending === week_ending));
+      .then(timesheets => timesheets.find(ts => ts.month_year === month_year));
     
     if (existingTimesheet) {
       return res.status(400).json({ 
-        error: 'Timesheet already exists for this week' 
+        error: 'Timesheet already exists for this month' 
       });
     }
 
     const timesheet = await timesheetService.createTimesheet(
-      req.user.id, 
-      week_ending, 
+      req.user.id,
+      month_year,
       time_entries,
       status
     );

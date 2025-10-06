@@ -70,6 +70,7 @@
 
         <form id="timesheetForm" class="timesheet-form">
             <input type="hidden" id="timesheetId" value="<%= timesheet ? timesheet.id : '' %>">
+            <input type="hidden" id="monthYear" value="<%= monthYear %>">
             <input type="hidden" id="weekEnding" value="<%= weekEnding %>">
 
             <!-- Monthly Time Capture Layout -->
@@ -1132,18 +1133,18 @@
             }
             
             function navigateMonth(direction) {
-                const weekEndingValue = document.getElementById('weekEnding').value;
-                const currentDate = new Date(weekEndingValue);
+                const monthYearValue = document.getElementById('monthYear').value;
+                const currentDate = new Date(monthYearValue + '-01');
                 const newDate = new Date(currentDate);
                 newDate.setMonth(currentDate.getMonth() + direction);
                 
                 // Navigate to the new month's timesheet
-                const newWeekEnding = newDate.toISOString().split('T')[0];
-                window.location.href = `/employee/timesheets/new?week_ending=${newWeekEnding}`;
+                const newMonthYear = newDate.getFullYear() + '-' + String(newDate.getMonth() + 1).padStart(2, '0');
+                window.location.href = `/employee/timesheets/new?month_year=${newMonthYear}`;
             }
             
             function collectTimesheetData() {
-                const weekEnding = document.getElementById('weekEnding').value;
+                const monthYear = document.getElementById('monthYear').value;
                 const clientName = document.getElementById('clientName').value.trim();
                 const timeEntries = [];
                 
@@ -1170,7 +1171,7 @@
                 });
                 
                 return {
-                    week_ending: weekEnding,
+                    month_year: monthYear,
                     time_entries: timeEntries
                 };
             }

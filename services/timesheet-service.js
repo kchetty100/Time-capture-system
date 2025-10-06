@@ -3,21 +3,25 @@ const timeEntryRepository = require('../repositories/time-entry-repository');
 const moment = require('moment');
 
 class TimesheetService {
-  async createTimesheet(userId, weekEnding, timeEntries, status = 'submitted') {
-    // Validate week ending date
-    const weekEndingDate = moment(weekEnding, 'YYYY-MM-DD');
-    if (!weekEndingDate.isValid()) {
-      throw new Error('Invalid week ending date');
+  async createTimesheet(userId, monthYear, timeEntries, status = 'submitted') {
+    // Validate month year format (YYYY-MM)
+    const monthYearDate = moment(monthYear, 'YYYY-MM');
+    if (!monthYearDate.isValid()) {
+      throw new Error('Invalid month year format');
     }
 
-    // Check if timesheet already exists for this week
+    // Calculate month start and end dates
+    const monthStart = monthYearDate.startOf('month').format('YYYY-MM-DD');
+    const monthEnd = monthYearDate.endOf('month').format('YYYY-MM-DD');
+
+    // Check if timesheet already exists for this month
     const existingTimesheet = await timesheetRepository.findOne({
       user_id: userId,
-      week_ending: weekEnding
+      month_year: monthYear
     });
 
     if (existingTimesheet) {
-      throw new Error('Timesheet already exists for this week');
+      throw new Error('Timesheet already exists for this month');
     }
 
     // Validate time entries (only if not empty)
@@ -28,7 +32,10 @@ class TimesheetService {
     // Create timesheet
     const timesheet = await timesheetRepository.create({
       user_id: userId,
-      week_ending: weekEnding,
+      month_year: monthYear,
+      month_start_date: monthStart,
+      month_end_date: monthEnd,
+      week_ending: monthEnd, // Keep for backward compatibility
       status: status,
       notes: null
     });
@@ -174,12 +181,37 @@ class TimesheetService {
     }
   }
 
+  getMonthYear(date) {
+    return moment(date).format('YYYY-MM');
+  }
+
+  getMonthStart(monthYear) {
+    return moment(monthYear, 'YYYY-MM').startOf('month').format('YYYY-MM-DD');
+  }
+
+  getMonthEnd(monthYear) {
+    return moment(monthYear, 'YYYY-MM').endOf('month').format('YYYY-MM-DD');
+  }
+
+  getCurrentMonthYear() {
+    return this.getMonthYear(new Date());
+  }
+
+  getPreviousMonthYear() {
+    return this.getMonthYear(moment().subtract(1, 'month'));
+  }
+
+  getNextMonthYear() {
+    return this.getMonthYear(moment().add(1, 'month'));
+  }
+
+  // Keep these for backward compatibility
   getWeekEnding(date) {
-    return moment(date).endOf('week').format('YYYY-MM-DD');
+    return moment(date).endOf('month').format('YYYY-MM-DD');
   }
 
   getWeekStart(date) {
-    return moment(date).startOf('week').format('YYYY-MM-DD');
+    return moment(date).startOf('month').format('YYYY-MM-DD');
   }
 
   getCurrentWeekEnding() {
@@ -187,7 +219,7 @@ class TimesheetService {
   }
 
   getPreviousWeekEnding() {
-    return this.getWeekEnding(moment().subtract(1, 'week'));
+    return this.getWeekEnding(moment().subtract(1, 'month'));
   }
 }
 
