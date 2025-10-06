@@ -72,48 +72,73 @@
             <input type="hidden" id="timesheetId" value="<%= timesheet ? timesheet.id : '' %>">
             <input type="hidden" id="weekEnding" value="<%= weekEnding %>">
 
-            <div class="time-entries-section">
+            <!-- Weekly Time Capture Layout -->
+            <div class="weekly-time-capture">
                 <div class="section-header">
-                    <h3>Time Entries</h3>
-                    <button type="button" id="addEntryBtn" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus"></i> Add Entry
-                    </button>
+                    <h3>Weekly Time Capture</h3>
+                    <p>Enter your hours for each day of the week</p>
                 </div>
 
-                <div id="timeEntriesList" class="time-entries-list">
-                    <% if (timeEntries.length > 0) { %>
-                        <% timeEntries.forEach((entry, index) => { %>
-                            <div class="time-entry-item" data-index="<%= index %>">
-                                <div class="form-group">
-                                    <label class="form-label">Project</label>
-                                    <input type="text" class="form-input project-input" value="<%= entry.project %>" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Date</label>
-                                    <input type="date" class="form-input date-input" value="<%= entry.date %>" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Hours</label>
-                                    <input type="number" class="form-input hours-input" value="<%= entry.hours %>" min="0.1" max="24" step="0.1" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Description</label>
-                                    <input type="text" class="form-input description-input" value="<%= entry.description || '' %>">
-                                </div>
-                                <div class="form-group">
-                                    <button type="button" class="btn btn-error btn-sm remove-entry-btn">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                <div class="week-grid">
+                    <% 
+                    const weekEndingDate = new Date(weekEnding);
+                    const weekStartDate = new Date(weekEndingDate);
+                    weekStartDate.setDate(weekEndingDate.getDate() - 6);
+                    
+                    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                    const currentTimeEntries = timeEntries || [];
+                    %>
+                    
+                    <% for (let i = 0; i < 7; i++) { %>
+                        <% 
+                        const currentDate = new Date(weekStartDate);
+                        currentDate.setDate(weekStartDate.getDate() + i);
+                        const dateString = currentDate.toISOString().split('T')[0];
+                        const dayEntries = currentTimeEntries.filter(entry => entry.date === dateString);
+                        const totalHours = dayEntries.reduce((sum, entry) => sum + parseFloat(entry.hours || 0), 0);
+                        %>
+                        
+                        <div class="day-block" data-date="<%= dateString %>">
+                            <div class="day-header">
+                                <h4><%= daysOfWeek[i] %></h4>
+                                <span class="day-date"><%= currentDate.toLocaleDateString() %></span>
+                            </div>
+                            
+                            <div class="day-hours-display">
+                                <div class="hours-total">
+                                    <span class="hours-number"><%= totalHours.toFixed(1) %></span>
+                                    <span class="hours-label">hours</span>
                                 </div>
                             </div>
-                        <% }); %>
-                    <% } else { %>
-                        <div class="empty-state">
-                            <i class="fas fa-clock"></i>
-                            <p>No time entries yet. Click "Add Entry" to get started.</p>
+                            
+                            <div class="day-entries">
+                                <% if (dayEntries.length > 0) { %>
+                                    <% dayEntries.forEach((entry, entryIndex) => { %>
+                                        <div class="entry-item" data-entry-id="<%= entry.id || '' %>">
+                                            <div class="entry-project"><%= entry.project %></div>
+                                            <div class="entry-hours"><%= entry.hours %>h</div>
+                                            <div class="entry-description"><%= entry.description || '' %></div>
+                                            <button type="button" class="btn-remove-entry" data-entry-id="<%= entry.id || '' %>">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    <% }); %>
+                                <% } else { %>
+                                    <div class="no-entries">No entries</div>
+                                <% } %>
+                            </div>
+                            
+                            <button type="button" class="btn-add-entry" data-date="<%= dateString %>">
+                                <i class="fas fa-plus"></i> Add Entry
+                            </button>
                         </div>
                     <% } %>
                 </div>
+            </div>
+
+            <!-- Hidden form for individual entries -->
+            <div id="timeEntriesList" style="display: none;">
+                <!-- This will be populated by JavaScript -->
             </div>
 
             <div class="form-actions">
@@ -362,6 +387,140 @@
             margin: 0;
         }
 
+        .weekly-time-capture {
+            margin-bottom: 2rem;
+        }
+
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .day-block {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .day-header {
+            text-align: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .day-header h4 {
+            color: var(--primary-blue);
+            margin: 0 0 0.25rem 0;
+            font-size: 0.9rem;
+        }
+
+        .day-date {
+            color: var(--medium-gray);
+            font-size: 0.8rem;
+        }
+
+        .day-hours-display {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .hours-total {
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+            padding: 0.75rem;
+        }
+
+        .hours-number {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+
+        .hours-label {
+            font-size: 0.8rem;
+            color: var(--medium-gray);
+        }
+
+        .day-entries {
+            flex: 1;
+            margin-bottom: 1rem;
+        }
+
+        .entry-item {
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+            font-size: 0.8rem;
+        }
+
+        .entry-project {
+            font-weight: 600;
+            color: var(--dark-gray);
+            margin-bottom: 0.25rem;
+        }
+
+        .entry-hours {
+            color: var(--primary-blue);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .entry-description {
+            color: var(--medium-gray);
+            font-size: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-remove-entry {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            background: var(--error);
+            color: var(--white);
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            cursor: pointer;
+        }
+
+        .no-entries {
+            text-align: center;
+            color: var(--medium-gray);
+            font-style: italic;
+            padding: 1rem 0;
+        }
+
+        .btn-add-entry {
+            width: 100%;
+            background: var(--primary-blue);
+            color: var(--white);
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-add-entry:hover {
+            background: var(--secondary-blue);
+        }
+
         .time-entry-item {
             display: grid;
             grid-template-columns: 2fr 1fr 100px 2fr auto;
@@ -410,6 +569,15 @@
         }
 
         @media (max-width: 768px) {
+            .week-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            
+            .day-block {
+                min-height: 150px;
+            }
+            
             .time-entry-item {
                 grid-template-columns: 1fr;
                 gap: 0.5rem;
