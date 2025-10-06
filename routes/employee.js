@@ -79,7 +79,7 @@ router.get('/timesheets', async (req, res) => {
 
 // Create timesheet form
 router.get('/timesheets/new', (req, res) => {
-  const monthYear = req.query.month_year || timesheetService.getCurrentMonthYear();
+  const monthYear = req.query.month_year || timesheetService.getCurrentMonthYear() || moment().format('YYYY-MM');
   const monthStart = timesheetService.getMonthStart(monthYear);
   const monthEnd = timesheetService.getMonthEnd(monthYear);
   
@@ -120,7 +120,7 @@ router.get('/timesheets/:id/edit', async (req, res) => {
     }
     
     const timeEntries = await timeEntryRepository.findByTimesheetId(timesheetId);
-    const monthYear = timesheet.month_year || timesheetService.getMonthYear(timesheet.week_ending);
+    const monthYear = timesheet.month_year || timesheetService.getMonthYear(timesheet.week_ending) || moment().format('YYYY-MM');
     const monthStart = timesheetService.getMonthStart(monthYear);
     const monthEnd = timesheetService.getMonthEnd(monthYear);
     const weekStart = timesheetService.getWeekStart(timesheet.week_ending);
