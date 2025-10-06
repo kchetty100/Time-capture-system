@@ -47,7 +47,7 @@
     </header>
 
     <main class="main">
-        <div class="container">
+        <div class="container-fluid">
             <% if (typeof success !== 'undefined' && success) { %>
                 <div class="alert alert-success">
                     <i class="fas fa-check-circle"></i>
@@ -504,19 +504,25 @@
             color: var(--primary-blue);
         }
 
+        .container-fluid {
+            width: 100%;
+            max-width: none;
+            padding: 0 1rem;
+        }
+
         .timesheet-table-container {
             background: var(--white);
             border-radius: var(--border-radius);
             box-shadow: var(--shadow);
             overflow-x: auto;
             margin-bottom: 1rem;
-            max-width: 100vw;
+            width: 100%;
         }
 
         .timesheet-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 1600px;
+            min-width: 100%;
         }
 
         .timesheet-table th {
@@ -585,13 +591,13 @@
         .day-cell {
             font-weight: 600;
             color: var(--dark-gray);
-            min-width: 100px;
+            width: 8%;
         }
 
         .date-cell {
             font-weight: 500;
             color: var(--primary-blue);
-            min-width: 120px;
+            width: 10%;
         }
 
         .time-input, .hours-input, .description-input {
@@ -604,16 +610,40 @@
         }
 
         .time-input {
-            min-width: 100px;
+            width: 100%;
         }
 
         .hours-input {
-            min-width: 80px;
+            width: 100%;
         }
 
         .description-input {
-            min-width: 350px;
+            width: 100%;
             text-align: left;
+        }
+
+        .time-cell {
+            width: 7%;
+        }
+
+        .hours-cell {
+            width: 6%;
+        }
+
+        .daily-total-cell {
+            width: 6%;
+        }
+
+        .week-total-cell {
+            width: 6%;
+        }
+
+        .description-cell {
+            width: 25%;
+        }
+
+        .actions-cell {
+            width: 4%;
         }
 
         .daily-total, .week-total {
@@ -673,34 +703,16 @@
             color: var(--primary-blue);
         }
 
-        /* Responsive design for wider table */
-        @media (min-width: 1400px) {
-            .timesheet-table {
-                min-width: 1800px;
+        /* Full width responsive design */
+        @media (max-width: 768px) {
+            .container-fluid {
+                padding: 0 0.5rem;
             }
             
-            .description-input {
-                min-width: 400px;
-            }
-        }
-
-        @media (min-width: 1600px) {
-            .timesheet-table {
-                min-width: 2000px;
-            }
-            
-            .description-input {
-                min-width: 450px;
-            }
-        }
-
-        @media (max-width: 1200px) {
-            .timesheet-table {
-                min-width: 1400px;
-            }
-            
-            .description-input {
-                min-width: 300px;
+            .timesheet-table th,
+            .timesheet-table td {
+                padding: 0.25rem;
+                font-size: 0.75rem;
             }
         }
 
