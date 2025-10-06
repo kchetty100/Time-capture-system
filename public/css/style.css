@@ -76,7 +76,7 @@ body {
         0 0 6px #cc0000,
         0 0 9px #cc0000,
         0 0 12px #cc0000;
-    animation: pulse 1.5s ease-in-out infinite;
+    animation: pulse 3s ease-in-out infinite;
 }
 
 @keyframes pulse {
