@@ -72,67 +72,132 @@
             <input type="hidden" id="timesheetId" value="<%= timesheet ? timesheet.id : '' %>">
             <input type="hidden" id="weekEnding" value="<%= weekEnding %>">
 
-            <!-- Weekly Time Capture Layout -->
-            <div class="weekly-time-capture">
-                <div class="section-header">
-                    <h3>Weekly Time Capture</h3>
-                    <p>Enter your hours for each day of the week</p>
+            <!-- Monthly Time Capture Layout -->
+            <div class="monthly-time-capture">
+                <div class="timesheet-header">
+                    <div class="company-info">
+                        <h2>REVERSIDE CONSULTING</h2>
+                        <p>Time Tracking System</p>
+                    </div>
+                    <div class="employee-info">
+                        <div class="info-row">
+                            <span class="label">Employee:</span>
+                            <span class="value"><%= user.name %></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Month:</span>
+                            <span class="value" id="currentMonth"><%= new Date(weekEnding).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) %></span>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="week-grid">
-                    <% 
-                    const weekEndingDate = new Date(weekEnding);
-                    const weekStartDate = new Date(weekEndingDate);
-                    weekStartDate.setDate(weekEndingDate.getDate() - 6);
-                    
-                    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-                    const currentTimeEntries = timeEntries || [];
-                    %>
-                    
-                    <% for (let i = 0; i < 7; i++) { %>
-                        <% 
-                        const currentDate = new Date(weekStartDate);
-                        currentDate.setDate(weekStartDate.getDate() + i);
-                        const dateString = currentDate.toISOString().split('T')[0];
-                        const dayEntries = currentTimeEntries.filter(entry => entry.date === dateString);
-                        const totalHours = dayEntries.reduce((sum, entry) => sum + parseFloat(entry.hours || 0), 0);
-                        %>
-                        
-                        <div class="day-block" data-date="<%= dateString %>">
-                            <div class="day-header">
-                                <h4><%= daysOfWeek[i] %></h4>
-                                <span class="day-date"><%= currentDate.toLocaleDateString() %></span>
-                            </div>
+                <div class="timesheet-table-container">
+                    <table class="timesheet-table">
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Date</th>
+                                <th>Time In</th>
+                                <th>Time Out</th>
+                                <th>Total Hours</th>
+                                <th>Time In</th>
+                                <th>Time Out</th>
+                                <th>Total Hours</th>
+                                <th>Daily Total</th>
+                                <th>Week Total</th>
+                                <th>Description / Task</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timesheetBody">
+                            <% 
+                            const weekEndingDate = new Date(weekEnding);
+                            const monthStart = new Date(weekEndingDate.getFullYear(), weekEndingDate.getMonth(), 1);
+                            const monthEnd = new Date(weekEndingDate.getFullYear(), weekEndingDate.getMonth() + 1, 0);
+                            const currentTimeEntries = timeEntries || [];
+                            const daysInMonth = monthEnd.getDate();
+                            let currentWeekTotal = 0;
+                            let weekStartDate = null;
+                            %>
                             
-                            <div class="day-hours-display">
-                                <div class="hours-total">
-                                    <span class="hours-number"><%= totalHours.toFixed(1) %></span>
-                                    <span class="hours-label">hours</span>
-                                </div>
-                            </div>
-                            
-                            <div class="day-entries">
-                                <% if (dayEntries.length > 0) { %>
-                                    <% dayEntries.forEach((entry, entryIndex) => { %>
-                                        <div class="entry-item" data-entry-id="<%= entry.id || '' %>">
-                                            <div class="entry-project"><%= entry.project %></div>
-                                            <div class="entry-hours"><%= entry.hours %>h</div>
-                                            <div class="entry-description"><%= entry.description || '' %></div>
-                                            <button type="button" class="btn-remove-entry" data-entry-id="<%= entry.id || '' %>">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
-                                    <% }); %>
-                                <% } else { %>
-                                    <div class="no-entries">No entries</div>
-                                <% } %>
-                            </div>
-                            
-                            <button type="button" class="btn-add-entry" data-date="<%= dateString %>">
-                                <i class="fas fa-plus"></i> Add Entry
-                            </button>
-                        </div>
-                    <% } %>
+                            <% for (let day = 1; day <= daysInMonth; day++) { %>
+                                <% 
+                                const currentDate = new Date(weekEndingDate.getFullYear(), weekEndingDate.getMonth(), day);
+                                const dateString = currentDate.toISOString().split('T')[0];
+                                const dayOfWeek = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
+                                const dayEntries = currentTimeEntries.filter(entry => entry.date === dateString);
+                                const totalHours = dayEntries.reduce((sum, entry) => sum + parseFloat(entry.hours || 0), 0);
+                                
+                                // Check if this is the start of a new week (Monday)
+                                const isMonday = currentDate.getDay() === 1;
+                                if (isMonday) {
+                                    weekStartDate = currentDate;
+                                    currentWeekTotal = 0;
+                                }
+                                currentWeekTotal += totalHours;
+                                
+                                // Check if this is the end of a week (Sunday) or last day of month
+                                const isSunday = currentDate.getDay() === 0;
+                                const isLastDay = day === daysInMonth;
+                                const showWeekTotal = isSunday || isLastDay;
+                                %>
+                                
+                                <tr class="timesheet-row" data-date="<%= dateString %>">
+                                    <td class="day-cell"><%= dayOfWeek %></td>
+                                    <td class="date-cell"><%= currentDate.toLocaleDateString('en-CA') %></td>
+                                    <td class="time-cell">
+                                        <input type="time" class="time-input" name="time_in_1_<%= day %>" value="09:00">
+                                    </td>
+                                    <td class="time-cell">
+                                        <input type="time" class="time-input" name="time_out_1_<%= day %>" value="17:00">
+                                    </td>
+                                    <td class="hours-cell">
+                                        <input type="number" class="hours-input" name="hours_1_<%= day %>" value="<%= totalHours > 0 ? totalHours.toFixed(2) : '8.00' %>" step="0.01" min="0" max="24">
+                                    </td>
+                                    <td class="time-cell">
+                                        <input type="time" class="time-input" name="time_in_2_<%= day %>" value="">
+                                    </td>
+                                    <td class="time-cell">
+                                        <input type="time" class="time-input" name="time_out_2_<%= day %>" value="">
+                                    </td>
+                                    <td class="hours-cell">
+                                        <input type="number" class="hours-input" name="hours_2_<%= day %>" value="0.00" step="0.01" min="0" max="24">
+                                    </td>
+                                    <td class="daily-total-cell">
+                                        <span class="daily-total"><%= totalHours.toFixed(2) %></span>
+                                    </td>
+                                    <td class="week-total-cell">
+                                        <% if (showWeekTotal) { %>
+                                            <span class="week-total"><%= currentWeekTotal.toFixed(2) %></span>
+                                        <% } else { %>
+                                            <span class="week-total">-</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="description-cell">
+                                        <input type="text" class="description-input" name="description_<%= day %>" value="<%= dayEntries.length > 0 ? dayEntries[0].description || '' : '' %>" placeholder="Enter task description">
+                                    </td>
+                                    <td class="actions-cell">
+                                        <button type="button" class="btn-add-entry-small" data-date="<%= dateString %>">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Month Navigation -->
+                <div class="month-navigation">
+                    <button type="button" class="btn-nav" id="prevMonth">
+                        <i class="fas fa-chevron-left"></i> Previous Month
+                    </button>
+                    <span class="current-month" id="currentMonthDisplay">
+                        <%= new Date(weekEnding).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) %>
+                    </span>
+                    <button type="button" class="btn-nav" id="nextMonth">
+                        Next Month <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
 
@@ -387,138 +452,179 @@
             margin: 0;
         }
 
-        .weekly-time-capture {
+        .monthly-time-capture {
             margin-bottom: 2rem;
         }
 
-        .week-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .day-block {
-            background: var(--white);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            padding: 1rem;
-            min-height: 200px;
+        .timesheet-header {
             display: flex;
-            flex-direction: column;
-        }
-
-        .day-header {
-            text-align: center;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
             margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--light-gray);
         }
 
-        .day-header h4 {
+        .company-info h2 {
             color: var(--primary-blue);
             margin: 0 0 0.25rem 0;
+            font-size: 1.5rem;
+        }
+
+        .company-info p {
+            color: var(--medium-gray);
+            margin: 0;
             font-size: 0.9rem;
         }
 
-        .day-date {
-            color: var(--medium-gray);
-            font-size: 0.8rem;
+        .employee-info {
+            text-align: right;
         }
 
-        .day-hours-display {
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-
-        .hours-total {
-            background: var(--light-gray);
-            border-radius: var(--border-radius);
-            padding: 0.75rem;
-        }
-
-        .hours-number {
-            display: block;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-blue);
-        }
-
-        .hours-label {
-            font-size: 0.8rem;
-            color: var(--medium-gray);
-        }
-
-        .day-entries {
-            flex: 1;
-            margin-bottom: 1rem;
-        }
-
-        .entry-item {
-            background: var(--light-gray);
-            border-radius: var(--border-radius);
-            padding: 0.5rem;
+        .info-row {
             margin-bottom: 0.5rem;
-            position: relative;
-            font-size: 0.8rem;
         }
 
-        .entry-project {
+        .info-row .label {
             font-weight: 600;
             color: var(--dark-gray);
-            margin-bottom: 0.25rem;
+            margin-right: 0.5rem;
         }
 
-        .entry-hours {
+        .info-row .value {
             color: var(--primary-blue);
-            font-weight: 600;
-            margin-bottom: 0.25rem;
         }
 
-        .entry-description {
-            color: var(--medium-gray);
-            font-size: 0.75rem;
-            margin-bottom: 0.5rem;
+        .timesheet-table-container {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+            margin-bottom: 1rem;
         }
 
-        .btn-remove-entry {
-            position: absolute;
-            top: 0.25rem;
-            right: 0.25rem;
-            background: var(--error);
-            color: var(--white);
-            border: none;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.6rem;
-            cursor: pointer;
-        }
-
-        .no-entries {
-            text-align: center;
-            color: var(--medium-gray);
-            font-style: italic;
-            padding: 1rem 0;
-        }
-
-        .btn-add-entry {
+        .timesheet-table {
             width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        .timesheet-table th {
+            background: var(--primary-blue);
+            color: var(--white);
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .timesheet-table td {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .timesheet-row:nth-child(even) {
+            background: var(--light-gray);
+        }
+
+        .timesheet-row:hover {
+            background: #f0f8ff;
+        }
+
+        .day-cell {
+            font-weight: 600;
+            color: var(--dark-gray);
+            min-width: 80px;
+        }
+
+        .date-cell {
+            font-weight: 500;
+            color: var(--primary-blue);
+            min-width: 100px;
+        }
+
+        .time-input, .hours-input, .description-input {
+            width: 100%;
+            padding: 0.25rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .time-input {
+            min-width: 80px;
+        }
+
+        .hours-input {
+            min-width: 60px;
+        }
+
+        .description-input {
+            min-width: 200px;
+            text-align: left;
+        }
+
+        .daily-total, .week-total {
+            font-weight: 700;
+            color: var(--primary-blue);
+            font-size: 0.9rem;
+        }
+
+        .daily-total-cell, .week-total-cell {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .btn-add-entry-small {
             background: var(--primary-blue);
             color: var(--white);
             border: none;
-            border-radius: var(--border-radius);
-            padding: 0.5rem;
-            font-size: 0.8rem;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
             cursor: pointer;
             transition: var(--transition);
         }
 
-        .btn-add-entry:hover {
+        .btn-add-entry-small:hover {
             background: var(--secondary-blue);
+        }
+
+        .month-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--white);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-nav {
+            background: var(--primary-blue);
+            color: var(--white);
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+
+        .btn-nav:hover {
+            background: var(--secondary-blue);
+        }
+
+        .current-month {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-blue);
         }
 
         .time-entry-item {
@@ -608,10 +714,17 @@
             initializeExistingEntries();
             
             // Add entry button handlers
-            document.querySelectorAll('.btn-add-entry').forEach(button => {
+            document.querySelectorAll('.btn-add-entry-small').forEach(button => {
                 button.addEventListener('click', function() {
                     const date = this.getAttribute('data-date');
                     addTimeEntry(date);
+                });
+            });
+
+            // Time input change handlers
+            document.querySelectorAll('.time-input, .hours-input').forEach(input => {
+                input.addEventListener('change', function() {
+                    updateDailyTotal(this);
                 });
             });
             
@@ -757,6 +870,62 @@
                 }
             }
             
+            function updateDailyTotal(input) {
+                const row = input.closest('.timesheet-row');
+                const date = row.getAttribute('data-date');
+                
+                // Get hours from both time periods
+                const hours1 = parseFloat(row.querySelector('input[name*="hours_1_"]').value) || 0;
+                const hours2 = parseFloat(row.querySelector('input[name*="hours_2_"]').value) || 0;
+                const dailyTotal = hours1 + hours2;
+                
+                // Update daily total display
+                const dailyTotalElement = row.querySelector('.daily-total');
+                dailyTotalElement.textContent = dailyTotal.toFixed(2);
+                
+                // Update week total
+                updateWeekTotal(row);
+            }
+            
+            function updateWeekTotal(row) {
+                const date = row.getAttribute('data-date');
+                const currentDate = new Date(date);
+                const dayOfWeek = currentDate.getDay();
+                
+                // Find the start of the week (Monday)
+                const weekStart = new Date(currentDate);
+                weekStart.setDate(currentDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+                
+                // Find the end of the week (Sunday)
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekStart.getDate() + 6);
+                
+                // Calculate week total
+                let weekTotal = 0;
+                const allRows = document.querySelectorAll('.timesheet-row');
+                
+                allRows.forEach(row => {
+                    const rowDate = new Date(row.getAttribute('data-date'));
+                    if (rowDate >= weekStart && rowDate <= weekEnd) {
+                        const dailyTotal = parseFloat(row.querySelector('.daily-total').textContent) || 0;
+                        weekTotal += dailyTotal;
+                    }
+                });
+                
+                // Update week total for all rows in this week
+                allRows.forEach(row => {
+                    const rowDate = new Date(row.getAttribute('data-date'));
+                    if (rowDate >= weekStart && rowDate <= weekEnd) {
+                        const weekTotalElement = row.querySelector('.week-total');
+                        if (rowDate.getDay() === 0 || rowDate.getTime() === weekEnd.getTime()) {
+                            weekTotalElement.textContent = weekTotal.toFixed(2);
+                        } else {
+                            weekTotalElement.textContent = '-';
+                        }
+                    }
+                });
+            }
+            
             function updateDayHours(date) {
                 const dayBlock = document.querySelector(`[data-date="${date}"]`);
                 const entries = dayBlock.querySelectorAll('.entry-item');
@@ -769,7 +938,9 @@
                 });
                 
                 const hoursNumber = dayBlock.querySelector('.hours-number');
-                hoursNumber.textContent = totalHours.toFixed(1);
+                if (hoursNumber) {
+                    hoursNumber.textContent = totalHours.toFixed(1);
+                }
             }
             
             function saveDraft() {
