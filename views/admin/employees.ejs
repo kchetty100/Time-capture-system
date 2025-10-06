@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1><span class="logo-re">re</span><span class="logo-v">v</span><span class="logo-erside">erside</span><span class="logo-asterisk">*</span></h1>
+                    <p class="tagline">You are with good company</p>
+                </div>
+                <nav class="nav">
+                    <% if (typeof user !== 'undefined' && user) { %>
+                        <div class="user-info">
+                            <span class="user-name">Welcome, <%= user.name %></span>
+                            <div class="user-role"><%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %></div>
+                        </div>
+                        <div class="nav-links">
+                            <a href="/admin" class="nav-link">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                            <a href="/admin/timesheets/pending" class="nav-link">
+                                <i class="fas fa-clock"></i> Pending
+                            </a>
+                            <a href="/admin/timesheets" class="nav-link">
+                                <i class="fas fa-file-alt"></i> All Timesheets
+                            </a>
+                            <a href="/admin/employees" class="nav-link active">
+                                <i class="fas fa-users"></i> Employees
+                            </a>
+                            <a href="/admin/reports" class="nav-link">
+                                <i class="fas fa-chart-bar"></i> Reports
+                            </a>
+                        </div>
+                        <form action="/auth/logout" method="POST" class="logout-form">
+                            <button type="submit" class="btn btn-outline">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </form>
+                    <% } %>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <% if (typeof success !== 'undefined' && success) { %>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <%= success %>
+                </div>
+            <% } %>
+            
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <%= error %>
+                </div>
+            <% } %>
+
+            <div class="employees-page">
+                <div class="page-header">
+                    <h1>Employee Management</h1>
+                    <p>Manage employee accounts and permissions</p>
+                </div>
+
+                <% if (employees && employees.length > 0) { %>
+                    <div class="employees-table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% employees.forEach(employee => { %>
+                                    <tr>
+                                        <td>
+                                            <div class="employee-info">
+                                                <strong><%= employee.name %></strong>
+                                            </div>
+                                        </td>
+                                        <td><%= employee.email %></td>
+                                        <td>
+                                            <span class="role-badge role-<%= employee.role %>">
+                                                <%= employee.role.charAt(0).toUpperCase() + employee.role.slice(1) %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge status-<%= employee.is_active ? 'active' : 'inactive' %>">
+                                                <%= employee.is_active ? 'Active' : 'Inactive' %>
+                                            </span>
+                                        </td>
+                                        <td><%= new Date(employee.created_at).toLocaleDateString() %></td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <% if (employee.role === 'employee') { %>
+                                                    <button class="btn btn-warning btn-sm toggle-status-btn" 
+                                                            data-id="<%= employee.id %>" 
+                                                            data-status="<%= employee.is_active ? 'deactivate' : 'activate' %>">
+                                                        <i class="fas fa-<%= employee.is_active ? 'ban' : 'check' %>"></i>
+                                                        <%= employee.is_active ? 'Deactivate' : 'Activate' %>
+                                                    </button>
+                                                <% } %>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <h3>No Employees Found</h3>
+                        <p>No employee accounts have been created yet.</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 REVERSIDE CONSULTING. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/app.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButtons = document.querySelectorAll('.toggle-status-btn');
+            
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const employeeId = this.getAttribute('data-id');
+                    const action = this.getAttribute('data-status');
+                    const actionText = action === 'activate' ? 'activate' : 'deactivate';
+                    
+                    if (confirm(`Are you sure you want to ${actionText} this employee?`)) {
+                        toggleEmployeeStatus(employeeId, action);
+                    }
+                });
+            });
+
+            async function toggleEmployeeStatus(employeeId, action) {
+                try {
+                    const response = await fetch(`/api/employees/${employeeId}/toggle-status`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        ReversideApp.showNotification(`Employee ${action}d successfully!`, 'success');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    console.error('Error toggling employee status:', error);
+                    ReversideApp.showNotification('Error: ' + error.message, 'error');
+                }
+            }
+        });
+    </script>
+
+    <style>
+        .employees-page {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: 1rem;
+        }
+
+        .page-header h1 {
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--medium-gray);
+        }
+
+        .employees-table-container {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .employee-info strong {
+            color: var(--dark-gray);
+        }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .role-admin {
+            background-color: #dbeafe;
+            color: var(--primary-blue);
+        }
+
+        .role-employee {
+            background-color: #f3f4f6;
+            color: var(--medium-gray);
+        }
+
+        .status-active {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-inactive {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--medium-gray);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--border-color);
+        }
+
+        .empty-state h3 {
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</body>
+</html>
