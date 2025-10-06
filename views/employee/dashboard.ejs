@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <%- include('../layout', { 
+        title: title, 
+        user: user, 
+        currentPage: 'dashboard'
+    }) %>
+
+    <div class="dashboard">
+        <div class="dashboard-header">
+            <h1>Welcome back, <%= user.name %>!</h1>
+            <p>Track your time and manage your timesheets</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value"><%= timesheets.length %></div>
+                <div class="stat-label">Total Timesheets</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value"><%= timesheets.filter(t => t.status === 'approved').length %></div>
+                <div class="stat-label">Approved</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value"><%= timesheets.filter(t => t.status === 'pending').length %></div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value"><%= currentTimesheet ? currentTimesheet.total_hours : '0' %></div>
+                <div class="stat-label">This Week Hours</div>
+            </div>
+        </div>
+
+        <div class="grid grid-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Current Week Timesheet</h3>
+                    <% if (!currentTimesheet) { %>
+                        <a href="/employee/timesheets/new" class="btn btn-primary btn-sm">Create Timesheet</a>
+                    <% } %>
+                </div>
+                <% if (currentTimesheet) { %>
+                    <div class="timesheet-summary">
+                        <div class="timesheet-info">
+                            <p><strong>Week Ending:</strong> <%= new Date(currentTimesheet.week_ending).toLocaleDateString() %></p>
+                            <p><strong>Total Hours:</strong> <%= currentTimesheet.total_hours %></p>
+                            <p><strong>Status:</strong> <span class="status-badge status-<%= currentTimesheet.status %>"><%= currentTimesheet.status %></span></p>
+                        </div>
+                        <div class="timesheet-actions">
+                            <a href="/employee/timesheets/<%= currentTimesheet.id %>" class="btn btn-outline btn-sm">View</a>
+                            <% if (currentTimesheet.status === 'pending') { %>
+                                <a href="/employee/timesheets/<%= currentTimesheet.id %>/edit" class="btn btn-primary btn-sm">Edit</a>
+                            <% } %>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <div class="empty-state">
+                        <i class="fas fa-file-alt"></i>
+                        <p>No timesheet for this week yet</p>
+                        <a href="/employee/timesheets/new" class="btn btn-primary">Create Timesheet</a>
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent Timesheets</h3>
+                    <a href="/employee/timesheets" class="btn btn-outline btn-sm">View All</a>
+                </div>
+                <% if (timesheets.length > 0) { %>
+                    <div class="timesheet-list">
+                        <% timesheets.slice(0, 3).forEach(timesheet => { %>
+                            <div class="timesheet-item">
+                                <div class="timesheet-details">
+                                    <p class="timesheet-week">Week of <%= new Date(timesheet.week_ending).toLocaleDateString() %></p>
+                                    <p class="timesheet-hours"><%= timesheet.total_hours %> hours</p>
+                                </div>
+                                <div class="timesheet-status">
+                                    <span class="status-badge status-<%= timesheet.status %>"><%= timesheet.status %></span>
+                                </div>
+                                <div class="timesheet-actions">
+                                    <a href="/employee/timesheets/<%= timesheet.id %>" class="btn btn-outline btn-sm">View</a>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <div class="empty-state">
+                        <i class="fas fa-clock"></i>
+                        <p>No timesheets yet</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <% if (projectStats.length > 0) { %>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Project Statistics (Last 4 Weeks)</h3>
+                </div>
+                <div class="project-stats">
+                    <% projectStats.forEach(project => { %>
+                        <div class="project-item">
+                            <div class="project-name"><%= project.project %></div>
+                            <div class="project-hours"><%= project.total_hours %> hours</div>
+                            <div class="project-entries"><%= project.entry_count %> entries</div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <style>
+        .dashboard-header {
+            margin-bottom: 1rem;
+        }
+
+        .dashboard-header h1 {
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-header p {
+            color: var(--medium-gray);
+        }
+
+        .timesheet-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+        }
+
+        .timesheet-info p {
+            margin: 0.25rem 0;
+        }
+
+        .timesheet-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .timesheet-list {
+            space-y: 0.5rem;
+        }
+
+        .timesheet-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .timesheet-item:last-child {
+            border-bottom: none;
+        }
+
+        .timesheet-details p {
+            margin: 0.25rem 0;
+        }
+
+        .timesheet-week {
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+
+        .timesheet-hours {
+            color: var(--medium-gray);
+            font-size: 0.875rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 1rem;
+            color: var(--medium-gray);
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--border-color);
+        }
+
+        .project-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .project-item {
+            padding: 1rem;
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+
+        .project-name {
+            font-weight: 600;
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .project-hours {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 0.25rem;
+        }
+
+        .project-entries {
+            font-size: 0.875rem;
+            color: var(--medium-gray);
+        }
+    </style>
+</body>
+</html>

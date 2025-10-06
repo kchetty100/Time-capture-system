@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1><span class="logo-re">re</span><span class="logo-v">v</span><span class="logo-erside">erside</span><span class="logo-asterisk">*</span></h1>
+                    <p class="tagline">You are with good company</p>
+                </div>
+                <nav class="nav">
+                    <div class="user-info">
+                        <span class="user-name">Welcome, <%= user.name %></span>
+                        <div class="user-role">Admin</div>
+                    </div>
+                    <div class="nav-links">
+                        <a href="/admin" class="nav-link active">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                        <a href="/admin/timesheets/pending" class="nav-link">
+                            <i class="fas fa-clock"></i> Pending
+                        </a>
+                        <a href="/admin/timesheets" class="nav-link">
+                            <i class="fas fa-file-alt"></i> All Timesheets
+                        </a>
+                        <a href="/admin/employees" class="nav-link">
+                            <i class="fas fa-users"></i> Employees
+                        </a>
+                        <a href="/admin/reports" class="nav-link">
+                            <i class="fas fa-chart-bar"></i> Reports
+                        </a>
+                    </div>
+                    <form action="/auth/logout" method="POST" class="logout-form">
+                        <button type="submit" class="btn btn-outline">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </form>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+
+    <div class="admin-dashboard">
+        <div class="dashboard-header">
+            <h1>Admin Dashboard</h1>
+            <p>Manage timesheets, employees, and view reports</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value"><%= stats.find(s => s.status === 'pending')?.count || 0 %></div>
+                <div class="stat-label">Pending Timesheets</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value"><%= stats.find(s => s.status === 'approved')?.count || 0 %></div>
+                <div class="stat-label">Approved</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value"><%= stats.find(s => s.status === 'rejected')?.count || 0 %></div>
+                <div class="stat-label">Rejected</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value"><%= employeeCount %></div>
+                <div class="stat-label">Total Employees</div>
+            </div>
+        </div>
+
+        <div class="grid grid-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Pending Timesheets</h3>
+                    <a href="/admin/timesheets/pending" class="btn btn-outline btn-sm">View All</a>
+                </div>
+                <% if (pendingTimesheets.length > 0) { %>
+                    <div class="timesheet-list">
+                        <% pendingTimesheets.forEach(timesheet => { %>
+                            <div class="timesheet-item">
+                                <div class="timesheet-details">
+                                    <p class="timesheet-employee"><%= timesheet.user_name %></p>
+                                    <p class="timesheet-week">Week of <%= new Date(timesheet.week_ending).toLocaleDateString() %></p>
+                                    <p class="timesheet-hours"><%= timesheet.total_hours %> hours</p>
+                                </div>
+                                <div class="timesheet-actions">
+                                    <a href="/admin/timesheets/<%= timesheet.id %>" class="btn btn-outline btn-sm">Review</a>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle"></i>
+                        <p>No pending timesheets</p>
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Quick Actions</h3>
+                </div>
+                <div class="quick-actions">
+                    <a href="/admin/timesheets/pending" class="action-item">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <h4>Review Timesheets</h4>
+                            <p>Approve or reject pending timesheets</p>
+                        </div>
+                    </a>
+                    <a href="/admin/employees" class="action-item">
+                        <i class="fas fa-users"></i>
+                        <div>
+                            <h4>Manage Employees</h4>
+                            <p>View and manage employee accounts</p>
+                        </div>
+                    </a>
+                    <a href="/admin/reports" class="action-item">
+                        <i class="fas fa-chart-bar"></i>
+                        <div>
+                            <h4>View Reports</h4>
+                            <p>Generate time tracking reports</p>
+                        </div>
+                    </a>
+                    <a href="/auth/register" class="action-item">
+                        <i class="fas fa-user-plus"></i>
+                        <div>
+                            <h4>Add Employee</h4>
+                            <p>Create new employee accounts</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <% if (weeklyStats.length > 0) { %>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Weekly Statistics (Last 30 Days)</h3>
+                </div>
+                <div class="weekly-stats">
+                    <div class="stats-chart">
+                        <% weeklyStats.forEach(week => { %>
+                            <div class="week-bar">
+                                <div class="week-label">
+                                    <%= new Date(week.week).toLocaleDateString() %>
+                                </div>
+                                <div class="week-data">
+                                    <div class="week-bar-fill" style="width: <%= Math.min((week.total_hours / 200) * 100, 100) %>%"></div>
+                                    <span class="week-hours"><%= week.total_hours %>h</span>
+                                </div>
+                                <div class="week-count"><%= week.timesheet_count %> timesheets</div>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <style>
+        .admin-dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-header h1 {
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-header p {
+            color: var(--medium-gray);
+        }
+
+        .timesheet-list {
+            space-y: 0.5rem;
+        }
+
+        .timesheet-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .timesheet-item:last-child {
+            border-bottom: none;
+        }
+
+        .timesheet-details p {
+            margin: 0.25rem 0;
+        }
+
+        .timesheet-employee {
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+
+        .timesheet-week {
+            color: var(--medium-gray);
+            font-size: 0.875rem;
+        }
+
+        .timesheet-hours {
+            color: var(--primary-blue);
+            font-weight: 600;
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .action-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            color: var(--dark-gray);
+            transition: var(--transition);
+        }
+
+        .action-item:hover {
+            background: #e2e8f0;
+            color: var(--primary-blue);
+        }
+
+        .action-item i {
+            font-size: 1.5rem;
+            color: var(--primary-blue);
+        }
+
+        .action-item h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1rem;
+        }
+
+        .action-item p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: var(--medium-gray);
+        }
+
+        .weekly-stats {
+            padding: 1rem 0;
+        }
+
+        .stats-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .week-bar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .week-label {
+            min-width: 100px;
+            font-size: 0.875rem;
+            color: var(--medium-gray);
+        }
+
+        .week-data {
+            flex: 1;
+            position: relative;
+            height: 30px;
+            background: var(--light-gray);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .week-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-blue), var(--secondary-blue));
+            border-radius: 15px;
+            transition: width 0.3s ease;
+        }
+
+        .week-hours {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: 600;
+            color: var(--white);
+            font-size: 0.75rem;
+        }
+
+        .week-count {
+            min-width: 80px;
+            text-align: right;
+            font-size: 0.75rem;
+            color: var(--medium-gray);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--medium-gray);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--success);
+        }
+
+        @media (max-width: 768px) {
+            .week-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .week-label,
+            .week-count {
+                min-width: auto;
+            }
+
+            .week-data {
+                width: 100%;
+            }
+        }
+    </style>
+
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 REVERSIDE CONSULTING. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <%- include('../layout', { 
+        title: title, 
+        user: user, 
+        currentPage: 'timesheets'
+    }) %>
+
+    <div class="timesheets-page">
+        <div class="page-header">
+            <h1>My Timesheets</h1>
+            <a href="/employee/timesheets/new" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Timesheet
+            </a>
+        </div>
+
+        <% if (timesheets.length > 0) { %>
+            <div class="timesheets-list">
+                <% timesheets.forEach(timesheet => { %>
+                    <div class="timesheet-card">
+                        <div class="timesheet-header">
+                            <div class="timesheet-info">
+                                <h3>Week of <%= new Date(timesheet.week_ending).toLocaleDateString() %></h3>
+                                <p class="timesheet-submitted">
+                                    Submitted: <%= new Date(timesheet.submitted_at).toLocaleDateString() %>
+                                </p>
+                            </div>
+                            <div class="timesheet-status">
+                                <span class="status-badge status-<%= timesheet.status %>">
+                                    <%= timesheet.status %>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="timesheet-details">
+                            <div class="detail-item">
+                                <i class="fas fa-clock"></i>
+                                <span><%= timesheet.total_hours %> hours</span>
+                            </div>
+                            <% if (timesheet.approved_at) { %>
+                                <div class="detail-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Approved: <%= new Date(timesheet.approved_at).toLocaleDateString() %></span>
+                                </div>
+                            <% } %>
+                            <% if (timesheet.rejection_reason) { %>
+                                <div class="detail-item">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <span>Rejected: <%= timesheet.rejection_reason %></span>
+                                </div>
+                            <% } %>
+                        </div>
+                        
+                        <div class="timesheet-actions">
+                            <a href="/employee/timesheets/<%= timesheet.id %>" class="btn btn-outline btn-sm">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <% if (timesheet.status === 'pending') { %>
+                                <a href="/employee/timesheets/<%= timesheet.id %>/edit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                            <% } %>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+
+            <% if (pagination.pages > 1) { %>
+                <div class="pagination">
+                    <% if (pagination.page > 1) { %>
+                        <a href="?page=<%= pagination.page - 1 %>" class="btn btn-outline">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    <% } %>
+                    
+                    <% for (let i = 1; i <= pagination.pages; i++) { %>
+                        <% if (i === pagination.page) { %>
+                            <span class="current"><%= i %></span>
+                        <% } else { %>
+                            <a href="?page=<%= i %>"><%= i %></a>
+                        <% } %>
+                    <% } %>
+                    
+                    <% if (pagination.page < pagination.pages) { %>
+                        <a href="?page=<%= pagination.page + 1 %>" class="btn btn-outline">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    <% } %>
+                </div>
+            <% } %>
+        <% } else { %>
+            <div class="empty-state">
+                <i class="fas fa-file-alt"></i>
+                <h3>No Timesheets Yet</h3>
+                <p>Start tracking your time by creating your first timesheet.</p>
+                <a href="/employee/timesheets/new" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create Timesheet
+                </a>
+            </div>
+        <% } %>
+    </div>
+
+    <style>
+        .timesheets-page {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            color: var(--dark-gray);
+            margin: 0;
+        }
+
+        .timesheets-list {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .timesheet-card {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .timesheet-card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .timesheet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .timesheet-info h3 {
+            color: var(--dark-gray);
+            margin: 0 0 0.5rem 0;
+        }
+
+        .timesheet-submitted {
+            color: var(--medium-gray);
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+        .timesheet-details {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--medium-gray);
+            font-size: 0.875rem;
+        }
+
+        .detail-item i {
+            color: var(--primary-blue);
+        }
+
+        .timesheet-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--medium-gray);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--border-color);
+        }
+
+        .empty-state h3 {
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .timesheet-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .timesheet-details {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .timesheet-actions {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</body>
+</html>

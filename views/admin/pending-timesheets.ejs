@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <%- include('../layout', { 
+        title: title, 
+        user: user, 
+        currentPage: 'pending'
+    }) %>
+
+    <div class="pending-timesheets-page">
+        <div class="page-header">
+            <h1>Pending Timesheets</h1>
+            <p>Review and approve employee timesheet submissions</p>
+        </div>
+
+        <% if (timesheets.length > 0) { %>
+            <div class="timesheets-table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Week Ending</th>
+                            <th>Total Hours</th>
+                            <th>Submitted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% timesheets.forEach(timesheet => { %>
+                            <tr>
+                                <td>
+                                    <div class="employee-info">
+                                        <strong><%= timesheet.user_name %></strong>
+                                        <br>
+                                        <small><%= timesheet.user_email %></small>
+                                    </div>
+                                </td>
+                                <td><%= new Date(timesheet.week_ending).toLocaleDateString() %></td>
+                                <td>
+                                    <span class="hours-badge"><%= timesheet.total_hours %>h</span>
+                                </td>
+                                <td><%= new Date(timesheet.submitted_at).toLocaleDateString() %></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="/admin/timesheets/<%= timesheet.id %>" class="btn btn-outline btn-sm">
+                                            <i class="fas fa-eye"></i> Review
+                                        </a>
+                                        <button class="btn btn-success btn-sm approve-btn" data-id="<%= timesheet.id %>">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                        <button class="btn btn-error btn-sm reject-btn" data-id="<%= timesheet.id %>">
+                                            <i class="fas fa-times"></i> Reject
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <div class="empty-state">
+                <i class="fas fa-check-circle"></i>
+                <h3>All Caught Up!</h3>
+                <p>No pending timesheets to review at the moment.</p>
+                <a href="/admin" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- Rejection Modal -->
+    <div id="rejectionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Reject Timesheet</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="rejectionForm">
+                    <input type="hidden" id="rejectTimesheetId">
+                    <div class="form-group">
+                        <label for="rejectionReason" class="form-label">Reason for Rejection</label>
+                        <textarea id="rejectionReason" class="form-textarea" rows="4" placeholder="Please provide a reason for rejecting this timesheet..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline modal-cancel">Cancel</button>
+                <button type="button" class="btn btn-error" id="confirmReject">Reject Timesheet</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const approveButtons = document.querySelectorAll('.approve-btn');
+            const rejectButtons = document.querySelectorAll('.reject-btn');
+            const modal = document.getElementById('rejectionModal');
+            const modalClose = document.querySelector('.modal-close');
+            const modalCancel = document.querySelector('.modal-cancel');
+            const confirmReject = document.getElementById('confirmReject');
+            const rejectionForm = document.getElementById('rejectionForm');
+            const rejectTimesheetId = document.getElementById('rejectTimesheetId');
+
+            // Approve timesheet
+            approveButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const timesheetId = this.getAttribute('data-id');
+                    if (confirm('Are you sure you want to approve this timesheet?')) {
+                        approveTimesheet(timesheetId);
+                    }
+                });
+            });
+
+            // Reject timesheet
+            rejectButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const timesheetId = this.getAttribute('data-id');
+                    rejectTimesheetId.value = timesheetId;
+                    modal.style.display = 'block';
+                });
+            });
+
+            // Modal controls
+            modalClose.addEventListener('click', closeModal);
+            modalCancel.addEventListener('click', closeModal);
+            confirmReject.addEventListener('click', function() {
+                const timesheetId = rejectTimesheetId.value;
+                const reason = document.getElementById('rejectionReason').value;
+                
+                if (!reason.trim()) {
+                    alert('Please provide a reason for rejection.');
+                    return;
+                }
+                
+                rejectTimesheet(timesheetId, reason);
+            });
+
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            function closeModal() {
+                modal.style.display = 'none';
+                rejectionForm.reset();
+            }
+
+            async function approveTimesheet(timesheetId) {
+                try {
+                    const response = await fetch(`/api/timesheets/${timesheetId}/approve`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        ReversideApp.showNotification('Timesheet approved successfully!', 'success');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    console.error('Error approving timesheet:', error);
+                    ReversideApp.showNotification('Error: ' + error.message, 'error');
+                }
+            }
+
+            async function rejectTimesheet(timesheetId, reason) {
+                try {
+                    const response = await fetch(`/api/timesheets/${timesheetId}/reject`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ rejection_reason: reason })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        ReversideApp.showNotification('Timesheet rejected successfully!', 'success');
+                        closeModal();
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    console.error('Error rejecting timesheet:', error);
+                    ReversideApp.showNotification('Error: ' + error.message, 'error');
+                }
+            }
+        });
+    </script>
+
+    <style>
+        .pending-timesheets-page {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--medium-gray);
+        }
+
+        .timesheets-table-container {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .employee-info strong {
+            color: var(--dark-gray);
+        }
+
+        .employee-info small {
+            color: var(--medium-gray);
+        }
+
+        .hours-badge {
+            background: var(--primary-blue);
+            color: var(--white);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--medium-gray);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--success);
+        }
+
+        .empty-state h3 {
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            margin-bottom: 2rem;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: var(--white);
+            margin: 5% auto;
+            padding: 0;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--dark-gray);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--medium-gray);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .modal-content {
+                margin: 10% auto;
+                width: 95%;
+            }
+        }
+    </style>
+</body>
+</html>

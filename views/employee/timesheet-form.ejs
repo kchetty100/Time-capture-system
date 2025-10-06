@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <%- include('../layout', { 
+        title: title, 
+        user: user, 
+        currentPage: 'timesheets'
+    }) %>
+
+    <div class="timesheet-form-container">
+        <div class="form-header">
+            <h1><%= isEdit ? 'Edit Timesheet' : 'New Timesheet' %></h1>
+            <p>Week ending: <%= new Date(weekEnding).toLocaleDateString() %></p>
+        </div>
+
+        <form id="timesheetForm" class="timesheet-form">
+            <input type="hidden" id="timesheetId" value="<%= timesheet ? timesheet.id : '' %>">
+            <input type="hidden" id="weekEnding" value="<%= weekEnding %>">
+
+            <div class="time-entries-section">
+                <div class="section-header">
+                    <h3>Time Entries</h3>
+                    <button type="button" id="addEntryBtn" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Add Entry
+                    </button>
+                </div>
+
+                <div id="timeEntriesList" class="time-entries-list">
+                    <% if (timeEntries.length > 0) { %>
+                        <% timeEntries.forEach((entry, index) => { %>
+                            <div class="time-entry-item" data-index="<%= index %>">
+                                <div class="form-group">
+                                    <label class="form-label">Project</label>
+                                    <input type="text" class="form-input project-input" value="<%= entry.project %>" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Date</label>
+                                    <input type="date" class="form-input date-input" value="<%= entry.date %>" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Hours</label>
+                                    <input type="number" class="form-input hours-input" value="<%= entry.hours %>" min="0.1" max="24" step="0.1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Description</label>
+                                    <input type="text" class="form-input description-input" value="<%= entry.description || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <button type="button" class="btn btn-error btn-sm remove-entry-btn">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="empty-state">
+                            <i class="fas fa-clock"></i>
+                            <p>No time entries yet. Click "Add Entry" to get started.</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" id="saveDraftBtn" class="btn btn-outline">
+                    <i class="fas fa-save"></i> Save Draft
+                </button>
+                <button type="button" id="submitTimesheetBtn" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Submit Timesheet
+                </button>
+                <a href="/employee" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const timeEntriesList = document.getElementById('timeEntriesList');
+            const addEntryBtn = document.getElementById('addEntryBtn');
+            const saveDraftBtn = document.getElementById('saveDraftBtn');
+            const submitTimesheetBtn = document.getElementById('submitTimesheetBtn');
+            const timesheetId = document.getElementById('timesheetId').value;
+            const weekEnding = document.getElementById('weekEnding').value;
+            const weekStart = '<%= weekStart %>';
+
+            let entryIndex = <%= timeEntries.length %>;
+
+            // Add new time entry
+            addEntryBtn.addEventListener('click', function() {
+                addTimeEntry();
+            });
+
+            // Remove time entry
+            timeEntriesList.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-entry-btn')) {
+                    e.target.closest('.time-entry-item').remove();
+                    updateEmptyState();
+                }
+            });
+
+            // Save draft
+            saveDraftBtn.addEventListener('click', function() {
+                saveTimesheet(false);
+            });
+
+            // Submit timesheet
+            submitTimesheetBtn.addEventListener('click', function() {
+                saveTimesheet(true);
+            });
+
+            function addTimeEntry() {
+                const entryHtml = `
+                    <div class="time-entry-item" data-index="${entryIndex}">
+                        <div class="form-group">
+                            <label class="form-label">Project</label>
+                            <input type="text" class="form-input project-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-input date-input" min="${weekStart}" max="${weekEnding}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Hours</label>
+                            <input type="number" class="form-input hours-input" min="0.1" max="24" step="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-input description-input">
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="btn btn-error btn-sm remove-entry-btn">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                timeEntriesList.insertAdjacentHTML('beforeend', entryHtml);
+                entryIndex++;
+                updateEmptyState();
+            }
+
+            function updateEmptyState() {
+                const entries = timeEntriesList.querySelectorAll('.time-entry-item');
+                const emptyState = timeEntriesList.querySelector('.empty-state');
+                
+                if (entries.length === 0 && !emptyState) {
+                    timeEntriesList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-clock"></i>
+                            <p>No time entries yet. Click "Add Entry" to get started.</p>
+                        </div>
+                    `;
+                } else if (entries.length > 0 && emptyState) {
+                    emptyState.remove();
+                }
+            }
+
+            function getTimeEntries() {
+                const entries = [];
+                const entryItems = timeEntriesList.querySelectorAll('.time-entry-item');
+                
+                entryItems.forEach(item => {
+                    const project = item.querySelector('.project-input').value;
+                    const date = item.querySelector('.date-input').value;
+                    const hours = parseFloat(item.querySelector('.hours-input').value);
+                    const description = item.querySelector('.description-input').value;
+                    
+                    if (project && date && hours) {
+                        entries.push({
+                            project: project.trim(),
+                            date: date,
+                            hours: hours,
+                            description: description.trim()
+                        });
+                    }
+                });
+                
+                return entries;
+            }
+
+            function validateEntries() {
+                const entries = getTimeEntries();
+                
+                if (entries.length === 0) {
+                    alert('Please add at least one time entry.');
+                    return false;
+                }
+                
+                // Validate dates are within the week
+                const weekStartDate = new Date(weekStart);
+                const weekEndDate = new Date(weekEnding);
+                
+                for (const entry of entries) {
+                    const entryDate = new Date(entry.date);
+                    if (entryDate < weekStartDate || entryDate > weekEndDate) {
+                        alert(`Date ${entry.date} is outside the selected week.`);
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+
+            function saveTimesheet(submit = false) {
+                if (!validateEntries()) {
+                    return;
+                }
+                
+                const entries = getTimeEntries();
+                const url = timesheetId ? `/api/timesheets/${timesheetId}` : '/api/timesheets';
+                const method = timesheetId ? 'PUT' : 'POST';
+                
+                const data = {
+                    week_ending: weekEnding,
+                    time_entries: entries
+                };
+                
+                fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        if (submit) {
+                            // Submit the timesheet
+                            return fetch(`/api/timesheets/${result.timesheet_id || timesheetId}/submit`, {
+                                method: 'POST'
+                            });
+                        } else {
+                            // Update the timesheet ID for future edits
+                            if (result.timesheet_id) {
+                                document.getElementById('timesheetId').value = result.timesheet_id;
+                            }
+                            alert('Timesheet saved successfully!');
+                        }
+                    } else {
+                        throw new Error(result.error || 'Failed to save timesheet');
+                    }
+                })
+                .then(response => {
+                    if (response) {
+                        return response.json();
+                    }
+                })
+                .then(result => {
+                    if (result && result.success) {
+                        alert('Timesheet submitted successfully!');
+                        window.location.href = '/employee';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error: ' + error.message);
+                });
+            }
+
+            // Initialize empty state if no entries
+            updateEmptyState();
+        });
+    </script>
+
+    <style>
+        .timesheet-form-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .form-header {
+            margin-bottom: 1rem;
+        }
+
+        .form-header h1 {
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header p {
+            color: var(--medium-gray);
+        }
+
+        .time-entries-section {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-header h3 {
+            color: var(--dark-gray);
+            margin: 0;
+        }
+
+        .time-entry-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 100px 2fr auto;
+            gap: 1rem;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            background: var(--light-gray);
+        }
+
+        .time-entry-item .form-group {
+            margin-bottom: 0;
+        }
+
+        .time-entry-item .form-label {
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .time-entry-item .form-input {
+            padding: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            padding: 1rem;
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 1rem;
+            color: var(--medium-gray);
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--border-color);
+        }
+
+        @media (max-width: 768px) {
+            .time-entry-item {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</body>
+</html>
