@@ -70,29 +70,39 @@ body {
 }
 
 .logo-v {
-    color: var(--primary-red);
+    color: #cc0000;
     text-shadow: 
-        0 0 5px #ff0000,
-        0 0 10px #ff0000,
-        0 0 15px #ff0000,
-        0 0 20px #ff0000;
-    animation: glow 2s ease-in-out infinite alternate;
+        0 0 3px #cc0000,
+        0 0 6px #cc0000,
+        0 0 9px #cc0000,
+        0 0 12px #cc0000;
+    animation: pulse 1.5s ease-in-out infinite;
 }
 
-@keyframes glow {
-    from {
+@keyframes pulse {
+    0% {
         text-shadow: 
-            0 0 5px #ff0000,
-            0 0 10px #ff0000,
-            0 0 15px #ff0000,
-            0 0 20px #ff0000;
+            0 0 3px #cc0000,
+            0 0 6px #cc0000,
+            0 0 9px #cc0000,
+            0 0 12px #cc0000;
+        transform: scale(1);
     }
-    to {
+    50% {
         text-shadow: 
-            0 0 10px #ff0000,
-            0 0 20px #ff0000,
-            0 0 30px #ff0000,
-            0 0 40px #ff0000;
+            0 0 8px #cc0000,
+            0 0 16px #cc0000,
+            0 0 24px #cc0000,
+            0 0 32px #cc0000;
+        transform: scale(1.05);
+    }
+    100% {
+        text-shadow: 
+            0 0 3px #cc0000,
+            0 0 6px #cc0000,
+            0 0 9px #cc0000,
+            0 0 12px #cc0000;
+        transform: scale(1);
     }
 }
 
