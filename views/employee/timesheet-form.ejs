@@ -140,28 +140,35 @@
                                 const isSunday = currentDate.getDay() === 0;
                                 const isLastDay = day === daysInMonth;
                                 const showWeekTotal = isSunday || isLastDay;
+                                
+                                // Check if it's a weekend (Saturday = 6, Sunday = 0)
+                                const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
+                                const weekendClass = isWeekend ? 'weekend-row' : '';
+                                const defaultTimeIn = isWeekend ? '00:00' : '09:00';
+                                const defaultTimeOut = isWeekend ? '00:00' : '17:00';
+                                const defaultHours = isWeekend ? '0.00' : '8.00';
                                 %>
                                 
-                                <tr class="timesheet-row" data-date="<%= dateString %>">
+                                <tr class="timesheet-row <%= weekendClass %>" data-date="<%= dateString %>">
                                     <td class="day-cell"><%= dayOfWeek %></td>
                                     <td class="date-cell"><%= currentDate.toLocaleDateString('en-CA') %></td>
                                     <td class="time-cell">
-                                        <input type="time" class="time-input" name="time_in_1_<%= day %>" value="09:00">
+                                        <input type="time" class="time-input" name="time_in_1_<%= day %>" value="<%= defaultTimeIn %>">
                                     </td>
                                     <td class="time-cell">
-                                        <input type="time" class="time-input" name="time_out_1_<%= day %>" value="17:00">
+                                        <input type="time" class="time-input" name="time_out_1_<%= day %>" value="<%= defaultTimeOut %>">
                                     </td>
                                     <td class="hours-cell">
-                                        <input type="number" class="hours-input" name="hours_1_<%= day %>" value="<%= totalHours > 0 ? totalHours.toFixed(2) : '8.00' %>" step="0.01" min="0" max="24">
+                                        <input type="number" class="hours-input" name="hours_1_<%= day %>" value="<%= totalHours > 0 ? totalHours.toFixed(2) : defaultHours %>" step="0.01" min="0" max="24">
                                     </td>
                                     <td class="time-cell">
-                                        <input type="time" class="time-input" name="time_in_2_<%= day %>" value="">
+                                        <input type="time" class="time-input" name="time_in_2_<%= day %>" value="<%= isWeekend ? '00:00' : '' %>">
                                     </td>
                                     <td class="time-cell">
-                                        <input type="time" class="time-input" name="time_out_2_<%= day %>" value="">
+                                        <input type="time" class="time-input" name="time_out_2_<%= day %>" value="<%= isWeekend ? '00:00' : '' %>">
                                     </td>
                                     <td class="hours-cell">
-                                        <input type="number" class="hours-input" name="hours_2_<%= day %>" value="0.00" step="0.01" min="0" max="24">
+                                        <input type="number" class="hours-input" name="hours_2_<%= day %>" value="<%= isWeekend ? '0.00' : '0.00' %>" step="0.01" min="0" max="24">
                                     </td>
                                     <td class="daily-total-cell">
                                         <span class="daily-total"><%= totalHours.toFixed(2) %></span>
@@ -534,6 +541,44 @@
 
         .timesheet-row:hover {
             background: #f0f8ff;
+        }
+
+        .weekend-row {
+            background: #ffe6e6 !important;
+            color: #8b0000;
+        }
+
+        .weekend-row:hover {
+            background: #ffcccc !important;
+        }
+
+        .weekend-row .day-cell {
+            font-weight: 700;
+            color: #8b0000;
+        }
+
+        .weekend-row .date-cell {
+            color: #8b0000;
+            font-weight: 600;
+        }
+
+        .weekend-row .time-input,
+        .weekend-row .hours-input {
+            background: #fff5f5;
+            border-color: #ffb3b3;
+            color: #8b0000;
+        }
+
+        .weekend-row .time-input:focus,
+        .weekend-row .hours-input:focus {
+            border-color: #ff6666;
+            box-shadow: 0 0 0 2px rgba(255, 102, 102, 0.2);
+        }
+
+        .weekend-row .daily-total,
+        .weekend-row .week-total {
+            color: #8b0000;
+            font-weight: 700;
         }
 
         .day-cell {
