@@ -141,6 +141,10 @@ class TimesheetService {
     return await timesheetRepository.getPendingTimesheets();
   }
 
+  async getTimesheetsByStatus(status) {
+    return await timesheetRepository.findByStatus(status);
+  }
+
   async getTimesheetStats() {
     return await timesheetRepository.getTimesheetStats();
   }
