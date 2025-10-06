@@ -81,11 +81,7 @@ body {
 
 @keyframes pulse {
     0% {
-        text-shadow: 
-            0 0 3px #cc0000,
-            0 0 6px #cc0000,
-            0 0 9px #cc0000,
-            0 0 12px #cc0000;
+        text-shadow: none;
         transform: scale(1);
     }
     50% {
@@ -97,11 +93,7 @@ body {
         transform: scale(1.05);
     }
     100% {
-        text-shadow: 
-            0 0 3px #cc0000,
-            0 0 6px #cc0000,
-            0 0 9px #cc0000,
-            0 0 12px #cc0000;
+        text-shadow: none;
         transform: scale(1);
     }
 }
