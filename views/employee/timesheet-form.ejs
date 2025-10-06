@@ -75,9 +75,11 @@
             <!-- Monthly Time Capture Layout -->
             <div class="monthly-time-capture">
                 <div class="timesheet-header">
-                    <div class="company-info">
-                        <h2>REVERSIDE CONSULTING</h2>
-                        <p>Time Tracking System</p>
+                    <div class="client-info">
+                        <div class="info-row">
+                            <label for="clientName" class="label">Client Name:</label>
+                            <input type="text" id="clientName" class="client-input" placeholder="Enter client name" value="">
+                        </div>
                     </div>
                     <div class="employee-info">
                         <div class="info-row">
@@ -87,6 +89,10 @@
                         <div class="info-row">
                             <span class="label">Month:</span>
                             <span class="value" id="currentMonth"><%= new Date(weekEnding).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) %></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Total Hours:</span>
+                            <span class="value" id="totalHours">0.00</span>
                         </div>
                     </div>
                 </div>
@@ -474,16 +480,23 @@
             margin-bottom: 1rem;
         }
 
-        .company-info h2 {
-            color: var(--primary-blue);
-            margin: 0 0 0.25rem 0;
-            font-size: 1.5rem;
+        .client-info {
+            flex: 1;
         }
 
-        .company-info p {
-            color: var(--medium-gray);
-            margin: 0;
-            font-size: 0.9rem;
+        .client-input {
+            width: 300px;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            margin-left: 0.5rem;
+        }
+
+        .client-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
         }
 
         .employee-info {
@@ -818,6 +831,9 @@
             // Initialize with existing entries
             initializeExistingEntries();
             
+            // Initialize total hours calculation
+            updateTotalHours();
+            
             // Add entry button handlers
             document.querySelectorAll('.btn-add-entry-small').forEach(button => {
                 button.addEventListener('click', function() {
@@ -830,6 +846,7 @@
             document.querySelectorAll('.time-input, .hours-input').forEach(input => {
                 input.addEventListener('change', function() {
                     updateDailyTotal(this);
+                    updateTotalHours();
                 });
             });
             
@@ -1001,6 +1018,22 @@
                 updateWeekTotal(row);
             }
             
+            function updateTotalHours() {
+                let totalHours = 0;
+                
+                // Calculate total from all daily totals
+                document.querySelectorAll('.daily-total').forEach(element => {
+                    const hours = parseFloat(element.textContent) || 0;
+                    totalHours += hours;
+                });
+                
+                // Update the total hours display
+                const totalHoursElement = document.getElementById('totalHours');
+                if (totalHoursElement) {
+                    totalHoursElement.textContent = totalHours.toFixed(2);
+                }
+            }
+            
             function updateWeekTotal(row) {
                 const date = row.getAttribute('data-date');
                 const currentDate = new Date(date);
@@ -1123,6 +1156,7 @@
             
             function collectTimesheetData() {
                 const weekEnding = document.getElementById('weekEnding').value;
+                const clientName = document.getElementById('clientName').value.trim();
                 const timeEntries = [];
                 
                 // Collect data from each day row
@@ -1144,7 +1178,7 @@
                     // Only add entries if there are hours worked
                     if (hours1 > 0) {
                         timeEntries.push({
-                            project: 'Work', // Default project name
+                            project: clientName || 'Work', // Use client name as project or default to 'Work'
                             date: date,
                             hours: hours1,
                             description: description1 || `${dayOfWeek} work`
@@ -1153,7 +1187,7 @@
                     
                     if (hours2 > 0) {
                         timeEntries.push({
-                            project: 'Work', // Default project name
+                            project: clientName || 'Work', // Use client name as project or default to 'Work'
                             date: date,
                             hours: hours2,
                             description: description1 || `${dayOfWeek} work (Period 2)`
