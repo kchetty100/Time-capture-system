@@ -598,5 +598,228 @@
     </footer>
 
     <script src="/js/app.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const timeEntriesList = document.getElementById('timeEntriesList');
+            let entryCounter = 0;
+            
+            // Initialize with existing entries
+            initializeExistingEntries();
+            
+            // Add entry button handlers
+            document.querySelectorAll('.btn-add-entry').forEach(button => {
+                button.addEventListener('click', function() {
+                    const date = this.getAttribute('data-date');
+                    addTimeEntry(date);
+                });
+            });
+            
+            // Remove entry button handlers
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.btn-remove-entry')) {
+                    const entryId = e.target.closest('.btn-remove-entry').getAttribute('data-entry-id');
+                    removeTimeEntry(entryId);
+                }
+            });
+            
+            // Form submission
+            document.getElementById('timesheetForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitTimesheet();
+            });
+            
+            // Save draft button
+            document.getElementById('saveDraftBtn').addEventListener('click', function() {
+                saveDraft();
+            });
+            
+            // Submit timesheet button
+            document.getElementById('submitTimesheetBtn').addEventListener('click', function() {
+                submitTimesheet();
+            });
+            
+            function initializeExistingEntries() {
+                // This will be populated by the server-side data
+                // For now, we'll handle new entries dynamically
+            }
+            
+            function addTimeEntry(date) {
+                // Create a modal or inline form for adding entries
+                const project = prompt('Enter project name:');
+                if (!project) return;
+                
+                const hours = prompt('Enter hours worked:');
+                if (!hours || isNaN(hours) || parseFloat(hours) <= 0) {
+                    alert('Please enter a valid number of hours');
+                    return;
+                }
+                
+                const description = prompt('Enter description (optional):') || '';
+                
+                // Add to the day block
+                addEntryToDay(date, {
+                    id: 'new_' + (++entryCounter),
+                    project: project,
+                    hours: parseFloat(hours),
+                    description: description
+                });
+                
+                // Add to hidden form
+                addEntryToForm(date, {
+                    id: 'new_' + entryCounter,
+                    project: project,
+                    hours: parseFloat(hours),
+                    description: description
+                });
+            }
+            
+            function addEntryToDay(date, entry) {
+                const dayBlock = document.querySelector(`[data-date="${date}"]`);
+                const entriesContainer = dayBlock.querySelector('.day-entries');
+                const noEntries = entriesContainer.querySelector('.no-entries');
+                
+                if (noEntries) {
+                    noEntries.remove();
+                }
+                
+                const entryElement = document.createElement('div');
+                entryElement.className = 'entry-item';
+                entryElement.setAttribute('data-entry-id', entry.id);
+                entryElement.innerHTML = `
+                    <div class="entry-project">${entry.project}</div>
+                    <div class="entry-hours">${entry.hours}h</div>
+                    <div class="entry-description">${entry.description}</div>
+                    <button type="button" class="btn-remove-entry" data-entry-id="${entry.id}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                entriesContainer.appendChild(entryElement);
+                
+                // Update hours total
+                updateDayHours(date);
+            }
+            
+            function addEntryToForm(date, entry) {
+                const entryElement = document.createElement('div');
+                entryElement.className = 'time-entry-item';
+                entryElement.setAttribute('data-index', entryCounter);
+                entryElement.innerHTML = `
+                    <div class="form-group">
+                        <input type="text" class="form-input project-input" value="${entry.project}" name="time_entries[${entryCounter}][project]" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="date" class="form-input date-input" value="${date}" name="time_entries[${entryCounter}][date]" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" class="form-input hours-input" value="${entry.hours}" name="time_entries[${entryCounter}][hours]" min="0.1" max="24" step="0.1" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-input description-input" value="${entry.description}" name="time_entries[${entryCounter}][description]">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-error btn-sm remove-entry-btn" data-entry-id="${entry.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                timeEntriesList.appendChild(entryElement);
+            }
+            
+            function removeTimeEntry(entryId) {
+                // Remove from day block
+                const entryElement = document.querySelector(`[data-entry-id="${entryId}"]`);
+                if (entryElement) {
+                    const dayBlock = entryElement.closest('.day-block');
+                    const date = dayBlock.getAttribute('data-date');
+                    
+                    entryElement.remove();
+                    
+                    // Check if day has no entries
+                    const entriesContainer = dayBlock.querySelector('.day-entries');
+                    if (entriesContainer.children.length === 0) {
+                        const noEntries = document.createElement('div');
+                        noEntries.className = 'no-entries';
+                        noEntries.textContent = 'No entries';
+                        entriesContainer.appendChild(noEntries);
+                    }
+                    
+                    // Update hours total
+                    updateDayHours(date);
+                }
+                
+                // Remove from form
+                const formEntry = timeEntriesList.querySelector(`[data-entry-id="${entryId}"]`);
+                if (formEntry) {
+                    formEntry.remove();
+                }
+            }
+            
+            function updateDayHours(date) {
+                const dayBlock = document.querySelector(`[data-date="${date}"]`);
+                const entries = dayBlock.querySelectorAll('.entry-item');
+                let totalHours = 0;
+                
+                entries.forEach(entry => {
+                    const hoursText = entry.querySelector('.entry-hours').textContent;
+                    const hours = parseFloat(hoursText.replace('h', ''));
+                    totalHours += hours;
+                });
+                
+                const hoursNumber = dayBlock.querySelector('.hours-number');
+                hoursNumber.textContent = totalHours.toFixed(1);
+            }
+            
+            function saveDraft() {
+                const formData = new FormData(document.getElementById('timesheetForm'));
+                formData.append('status', 'draft');
+                
+                fetch('/employee/timesheets', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Timesheet saved as draft');
+                        if (data.timesheetId) {
+                            document.getElementById('timesheetId').value = data.timesheetId;
+                        }
+                    } else {
+                        alert('Error saving timesheet: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error saving timesheet');
+                });
+            }
+            
+            function submitTimesheet() {
+                const formData = new FormData(document.getElementById('timesheetForm'));
+                formData.append('status', 'submitted');
+                
+                fetch('/employee/timesheets', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Timesheet submitted successfully');
+                        window.location.href = '/employee/timesheets';
+                    } else {
+                        alert('Error submitting timesheet: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error submitting timesheet');
+                });
+            }
+        });
+    </script>
 </body>
 </html>
