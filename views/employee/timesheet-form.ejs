@@ -857,6 +857,15 @@
                 submitTimesheet();
             });
             
+            // Month navigation buttons
+            document.getElementById('prevMonth').addEventListener('click', function() {
+                navigateMonth(-1);
+            });
+            
+            document.getElementById('nextMonth').addEventListener('click', function() {
+                navigateMonth(1);
+            });
+            
             function initializeExistingEntries() {
                 // This will be populated by the server-side data
                 // For now, we'll handle new entries dynamically
@@ -1100,6 +1109,16 @@
                     console.error('Error:', error);
                     alert('Error submitting timesheet');
                 });
+            }
+            
+            function navigateMonth(direction) {
+                const currentDate = new Date(weekEnding);
+                const newDate = new Date(currentDate);
+                newDate.setMonth(currentDate.getMonth() + direction);
+                
+                // Navigate to the new month's timesheet
+                const newWeekEnding = newDate.toISOString().split('T')[0];
+                window.location.href = `/employee/timesheets/new?week_ending=${newWeekEnding}`;
             }
             
             function collectTimesheetData() {
