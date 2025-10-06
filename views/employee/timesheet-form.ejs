@@ -1132,7 +1132,8 @@
             }
             
             function navigateMonth(direction) {
-                const currentDate = new Date(weekEnding);
+                const weekEndingValue = document.getElementById('weekEnding').value;
+                const currentDate = new Date(weekEndingValue);
                 const newDate = new Date(currentDate);
                 newDate.setMonth(currentDate.getMonth() + direction);
                 
