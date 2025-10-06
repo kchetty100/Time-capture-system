@@ -21,14 +21,14 @@ try {
   process.exit(1);
 }
 
-// Add default admin user
-console.log('👤 Setting up default admin user...');
-try {
-  execSync('node scripts/add-admin-user.js', { stdio: 'inherit' });
-  console.log('✅ Admin user setup completed');
-} catch (error) {
-  console.error('❌ Admin user setup failed:', error.message);
-  // Don't exit here, app can still run
-}
+        // Add default admin user
+        console.log('👤 Setting up default admin user...');
+        try {
+          execSync('node scripts/railway-admin-fix.js', { stdio: 'inherit' });
+          console.log('✅ Admin user setup completed');
+        } catch (error) {
+          console.error('❌ Admin user setup failed:', error.message);
+          // Don't exit here, app can still run
+        }
 
 console.log('✅ Startup completed successfully');

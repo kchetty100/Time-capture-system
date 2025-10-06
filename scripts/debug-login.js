@@ -6,7 +6,7 @@ async function debugLogin() {
   console.log('============================');
   
   try {
-    await db.connect();
+    db.connect();
     console.log('✅ Connected to database');
     
     // Check all users in database
@@ -65,7 +65,7 @@ async function debugLogin() {
   } catch (error) {
     console.error('❌ Error:', error);
   } finally {
-    db.close();
+    await db.close();
   }
 }
 
