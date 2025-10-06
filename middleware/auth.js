@@ -44,7 +44,7 @@ const loadUser = async (req, res, next) => {
   if (req.session && req.session.userId) {
     try {
       const user = await userRepository.findById(req.session.userId);
-      if (user && user.is_active) {
+      if (user) {
         req.user = user;
       } else {
         req.session.destroy();

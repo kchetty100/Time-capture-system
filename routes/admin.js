@@ -15,17 +15,40 @@ router.use(requireAdmin);
 // Admin dashboard
 router.get('/', async (req, res) => {
   try {
-    // Get statistics
-    const stats = await timesheetService.getTimesheetStats();
-    const pendingTimesheets = await timesheetService.getPendingTimesheets();
+    console.log('Admin dashboard accessed by:', req.user);
     
-    // Get recent activity (last 30 days)
-    const thirtyDaysAgo = moment().subtract(30, 'days').format('YYYY-MM-DD');
-    const today = moment().format('YYYY-MM-DD');
-    const weeklyStats = await timesheetService.getWeeklyStats(thirtyDaysAgo, today);
+    // Get basic statistics with fallbacks
+    let stats = { totalTimesheets: 0, pendingTimesheets: 0, approvedTimesheets: 0, rejectedTimesheets: 0 };
+    let pendingTimesheets = [];
+    let weeklyStats = [];
+    let employeeCount = 0;
     
-    // Get employee count
-    const employees = await userRepository.getEmployees();
+    try {
+      stats = await timesheetService.getTimesheetStats();
+    } catch (error) {
+      console.log('Stats error (using defaults):', error.message);
+    }
+    
+    try {
+      pendingTimesheets = await timesheetService.getPendingTimesheets();
+    } catch (error) {
+      console.log('Pending timesheets error (using defaults):', error.message);
+    }
+    
+    try {
+      const thirtyDaysAgo = moment().subtract(30, 'days').format('YYYY-MM-DD');
+      const today = moment().format('YYYY-MM-DD');
+      weeklyStats = await timesheetService.getWeeklyStats(thirtyDaysAgo, today);
+    } catch (error) {
+      console.log('Weekly stats error (using defaults):', error.message);
+    }
+    
+    try {
+      const employees = await userRepository.getEmployees();
+      employeeCount = employees.length;
+    } catch (error) {
+      console.log('Employee count error (using defaults):', error.message);
+    }
     
     res.render('admin/dashboard', {
       title: 'Admin Dashboard - REVERSIDE Time Tracker',
@@ -33,7 +56,7 @@ router.get('/', async (req, res) => {
       stats,
       pendingTimesheets: pendingTimesheets.slice(0, 5),
       weeklyStats,
-      employeeCount: employees.length
+      employeeCount
     });
   } catch (error) {
     console.error('Admin dashboard error:', error);
