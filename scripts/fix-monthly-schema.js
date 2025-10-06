@@ -52,6 +52,87 @@ async function fixMonthlySchema() {
       `);
       console.log('✅ Created unique index');
       
+      // Fix status constraint
+      console.log('\n🔧 Fixing status constraint...');
+      try {
+        // Check if we need to recreate the table for constraint fix
+        const constraintCheck = await db.query(`
+          SELECT sql FROM sqlite_master 
+          WHERE type='table' AND name='timesheets'
+        `);
+        
+        if (constraintCheck.rows && constraintCheck.rows[0]) {
+          const tableSql = constraintCheck.rows[0].sql;
+          if (tableSql.includes("status IN ('pending', 'approved', 'rejected')")) {
+            console.log('⚠️  Old status constraint found, recreating table...');
+            
+            // Create backup
+            await db.run('CREATE TABLE timesheets_backup AS SELECT * FROM timesheets');
+            console.log('✅ Created backup table');
+            
+            // Drop old table
+            await db.run('DROP TABLE timesheets');
+            console.log('✅ Dropped old table');
+            
+            // Recreate with correct constraint
+            await db.run(`
+              CREATE TABLE timesheets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                week_ending DATE NOT NULL,
+                month_year TEXT,
+                month_start_date DATE,
+                month_end_date DATE,
+                total_hours REAL DEFAULT 0,
+                status TEXT DEFAULT 'pending' CHECK (status IN ('draft', 'pending', 'submitted', 'approved', 'rejected')),
+                submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                approved_by INTEGER,
+                approved_at DATETIME,
+                rejection_reason TEXT,
+                notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL,
+                UNIQUE(user_id, month_year)
+              )
+            `);
+            console.log('✅ Recreated table with correct constraint');
+            
+            // Restore data
+            await db.run(`
+              INSERT INTO timesheets 
+              SELECT * FROM timesheets_backup
+            `);
+            console.log('✅ Restored data from backup');
+            
+            // Drop backup
+            await db.run('DROP TABLE timesheets_backup');
+            console.log('✅ Dropped backup table');
+            
+            // Recreate trigger
+            await db.run(`
+              CREATE TRIGGER IF NOT EXISTS update_timesheets_updated_at 
+                AFTER UPDATE ON timesheets 
+                FOR EACH ROW
+                BEGIN
+                  UPDATE timesheets SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+                END
+            `);
+            console.log('✅ Recreated trigger');
+            
+            // Recreate indexes
+            await db.run(`
+              CREATE UNIQUE INDEX IF NOT EXISTS idx_timesheets_user_month 
+              ON timesheets(user_id, month_year)
+            `);
+            console.log('✅ Recreated indexes');
+          }
+        }
+      } catch (error) {
+        console.log('⚠️  Constraint fix error (non-critical):', error.message);
+      }
+      
     } else {
       console.log('✅ Monthly columns already exist');
     }
