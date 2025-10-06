@@ -42,19 +42,50 @@ router.get('/', async (req, res) => {
     console.log('Admin dashboard accessed by:', req.user);
     console.log('User session:', req.session);
     
-    // Simple dashboard with minimal data
+    // Get actual data for dashboard
+    let stats = [
+      { status: 'pending', count: 0 },
+      { status: 'approved', count: 0 },
+      { status: 'rejected', count: 0 },
+      { status: 'total', count: 0 }
+    ];
+    let pendingTimesheets = [];
+    let weeklyStats = [];
+    let employeeCount = 0;
+    
+    try {
+      // Get real statistics
+      const realStats = await timesheetService.getTimesheetStats();
+      if (realStats && Array.isArray(realStats)) {
+        stats = realStats;
+      }
+    } catch (error) {
+      console.log('Stats error (using defaults):', error.message);
+    }
+    
+    try {
+      // Get real pending timesheets
+      pendingTimesheets = await timesheetService.getPendingTimesheets();
+      console.log('Found pending timesheets:', pendingTimesheets.length);
+    } catch (error) {
+      console.log('Pending timesheets error (using defaults):', error.message);
+    }
+    
+    try {
+      // Get employee count
+      const employees = await userRepository.getEmployees();
+      employeeCount = employees.length;
+    } catch (error) {
+      console.log('Employee count error (using defaults):', error.message);
+    }
+    
     res.render('admin/dashboard', {
       title: 'Admin Dashboard - REVERSIDE Time Tracker',
       user: req.user,
-      stats: [
-        { status: 'pending', count: 0 },
-        { status: 'approved', count: 0 },
-        { status: 'rejected', count: 0 },
-        { status: 'total', count: 0 }
-      ],
-      pendingTimesheets: [],
-      weeklyStats: [],
-      employeeCount: 0
+      stats,
+      pendingTimesheets: pendingTimesheets.slice(0, 5), // Show first 5
+      weeklyStats,
+      employeeCount
     });
   } catch (error) {
     console.error('Admin dashboard error:', error);
