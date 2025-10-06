@@ -197,7 +197,7 @@ router.post('/timesheets', [
       });
     }
 
-    const { month_year, time_entries, status = 'submitted' } = req.body;
+    const { month_year, time_entries, status = 'pending' } = req.body;
     
     // Check if timesheet already exists
     const existingTimesheet = await timesheetService.getTimesheetsByUser(req.user.id)

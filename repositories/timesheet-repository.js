@@ -19,7 +19,10 @@ class TimesheetRepository extends BaseRepository {
   }
 
   async getPendingTimesheets() {
-    return await this.findByStatus('pending');
+    // Get both pending and submitted timesheets for admin review
+    const pending = await this.findByStatus('pending');
+    const submitted = await this.findByStatus('submitted');
+    return [...pending, ...submitted];
   }
 
   async getApprovedTimesheets() {
