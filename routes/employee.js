@@ -120,6 +120,9 @@ router.get('/timesheets/:id/edit', async (req, res) => {
     }
     
     const timeEntries = await timeEntryRepository.findByTimesheetId(timesheetId);
+    const monthYear = timesheet.month_year || timesheetService.getMonthYear(timesheet.week_ending);
+    const monthStart = timesheetService.getMonthStart(monthYear);
+    const monthEnd = timesheetService.getMonthEnd(monthYear);
     const weekStart = timesheetService.getWeekStart(timesheet.week_ending);
     
     res.render('employee/timesheet-form', {
@@ -127,6 +130,9 @@ router.get('/timesheets/:id/edit', async (req, res) => {
       user: req.user,
       timesheet,
       timeEntries,
+      monthYear,
+      monthStart,
+      monthEnd,
       weekEnding: timesheet.week_ending,
       weekStart,
       isEdit: true
