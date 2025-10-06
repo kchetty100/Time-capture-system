@@ -54,6 +54,17 @@ app.use('/employee', employeeRoutes);
 app.use('/admin', adminRoutes);
 app.use('/api', apiRoutes);
 
+// Test route
+app.get('/test', (req, res) => {
+  res.json({ 
+    message: 'Server is working', 
+    session: req.session,
+    hasSession: !!req.session,
+    hasUserId: !!req.session?.userId,
+    userRole: req.session?.userRole
+  });
+});
+
 // Root route
 app.get('/', (req, res) => {
   if (req.session && req.session.userId) {

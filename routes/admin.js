@@ -8,18 +8,21 @@ const moment = require('moment');
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
-router.use(requireAuth);
-router.use(requireAdmin);
-
-// Test route
+// Test route (no auth for debugging)
 router.get('/test', (req, res) => {
   res.json({ 
     message: 'Admin test route working', 
     user: req.user,
-    session: req.session 
+    session: req.session,
+    hasSession: !!req.session,
+    hasUserId: !!req.session?.userId,
+    userRole: req.session?.userRole
   });
 });
+
+// Apply authentication middleware to all other routes
+router.use(requireAuth);
+router.use(requireAdmin);
 
 // Admin dashboard
 router.get('/', async (req, res) => {
