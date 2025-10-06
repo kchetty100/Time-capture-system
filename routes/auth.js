@@ -56,6 +56,8 @@ router.post('/login', [
 
     // Redirect based on role
     const redirectTo = user.role === 'admin' ? '/admin' : '/employee';
+    console.log('Login successful, redirecting to:', redirectTo);
+    console.log('User role:', user.role);
     res.redirect(redirectTo);
 
   } catch (error) {
