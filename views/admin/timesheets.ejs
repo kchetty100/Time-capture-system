@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1><span class="logo-re">re</span><span class="logo-v">v</span><span class="logo-erside">erside</span><span class="logo-asterisk">*</span></h1>
+                    <p class="tagline">You are with good company</p>
+                </div>
+                <nav class="nav">
+                    <% if (typeof user !== 'undefined' && user) { %>
+                        <div class="user-info">
+                            <span class="user-name">Welcome, <%= user.name %></span>
+                            <div class="user-role"><%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %></div>
+                        </div>
+                        <div class="nav-links">
+                            <a href="/admin" class="nav-link">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                            <a href="/admin/timesheets/pending" class="nav-link">
+                                <i class="fas fa-clock"></i> Pending
+                            </a>
+                            <a href="/admin/timesheets" class="nav-link active">
+                                <i class="fas fa-file-alt"></i> All Timesheets
+                            </a>
+                            <a href="/admin/employees" class="nav-link">
+                                <i class="fas fa-users"></i> Employees
+                            </a>
+                            <a href="/admin/reports" class="nav-link">
+                                <i class="fas fa-chart-bar"></i> Reports
+                            </a>
+                        </div>
+                        <form action="/auth/logout" method="POST" class="logout-form">
+                            <button type="submit" class="btn btn-outline">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </form>
+                    <% } %>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <% if (typeof success !== 'undefined' && success) { %>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <%= success %>
+                </div>
+            <% } %>
+            
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <%= error %>
+                </div>
+            <% } %>
+
+            <div class="timesheets-page">
+                <div class="page-header">
+                    <h1>All Timesheets</h1>
+                    <p>View and manage all employee timesheet submissions</p>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="filter-tabs">
+                    <a href="/admin/timesheets" class="filter-tab <%= !currentStatus ? 'active' : '' %>">
+                        <i class="fas fa-list"></i> All
+                    </a>
+                    <a href="/admin/timesheets?status=pending" class="filter-tab <%= currentStatus === 'pending' ? 'active' : '' %>">
+                        <i class="fas fa-clock"></i> Pending
+                    </a>
+                    <a href="/admin/timesheets?status=approved" class="filter-tab <%= currentStatus === 'approved' ? 'active' : '' %>">
+                        <i class="fas fa-check"></i> Approved
+                    </a>
+                    <a href="/admin/timesheets?status=rejected" class="filter-tab <%= currentStatus === 'rejected' ? 'active' : '' %>">
+                        <i class="fas fa-times"></i> Rejected
+                    </a>
+                </div>
+
+                <% if (timesheets && timesheets.length > 0) { %>
+                    <div class="timesheets-table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Week Ending</th>
+                                    <th>Total Hours</th>
+                                    <th>Status</th>
+                                    <th>Submitted</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% timesheets.forEach(timesheet => { %>
+                                    <tr>
+                                        <td>
+                                            <div class="employee-info">
+                                                <strong><%= timesheet.user_name || 'Unknown' %></strong>
+                                                <br>
+                                                <small><%= timesheet.user_email || 'No email' %></small>
+                                            </div>
+                                        </td>
+                                        <td><%= new Date(timesheet.week_ending).toLocaleDateString() %></td>
+                                        <td>
+                                            <span class="hours-badge"><%= timesheet.total_hours || 0 %>h</span>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge status-<%= timesheet.status %>">
+                                                <%= timesheet.status.charAt(0).toUpperCase() + timesheet.status.slice(1) %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <%= timesheet.submitted_at ? new Date(timesheet.submitted_at).toLocaleDateString() : 'Not submitted' %>
+                                        </td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <a href="/admin/timesheets/<%= timesheet.id %>" class="btn btn-outline btn-sm">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                                <% if (timesheet.status === 'pending') { %>
+                                                    <button class="btn btn-success btn-sm approve-btn" data-id="<%= timesheet.id %>">
+                                                        <i class="fas fa-check"></i> Approve
+                                                    </button>
+                                                    <button class="btn btn-error btn-sm reject-btn" data-id="<%= timesheet.id %>">
+                                                        <i class="fas fa-times"></i> Reject
+                                                    </button>
+                                                <% } %>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <% if (pagination && pagination.pages > 1) { %>
+                        <div class="pagination">
+                            <% if (pagination.page > 1) { %>
+                                <a href="?page=<%= pagination.page - 1 %><%= currentStatus ? '&status=' + currentStatus : '' %>" class="btn btn-outline btn-sm">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </a>
+                            <% } %>
+                            
+                            <span class="pagination-info">
+                                Page <%= pagination.page %> of <%= pagination.pages %>
+                            </span>
+                            
+                            <% if (pagination.page < pagination.pages) { %>
+                                <a href="?page=<%= pagination.page + 1 %><%= currentStatus ? '&status=' + currentStatus : '' %>" class="btn btn-outline btn-sm">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </a>
+                            <% } %>
+                        </div>
+                    <% } %>
+                <% } else { %>
+                    <div class="empty-state">
+                        <i class="fas fa-file-alt"></i>
+                        <h3>No Timesheets Found</h3>
+                        <p>No timesheets match the current filter criteria.</p>
+                        <a href="/admin/timesheets" class="btn btn-primary">
+                            <i class="fas fa-refresh"></i> View All Timesheets
+                        </a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 REVERSIDE CONSULTING. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/app.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const approveButtons = document.querySelectorAll('.approve-btn');
+            const rejectButtons = document.querySelectorAll('.reject-btn');
+            
+            // Approve timesheet
+            approveButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const timesheetId = this.getAttribute('data-id');
+                    if (confirm('Are you sure you want to approve this timesheet?')) {
+                        approveTimesheet(timesheetId);
+                    }
+                });
+            });
+
+            // Reject timesheet
+            rejectButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const timesheetId = this.getAttribute('data-id');
+                    const reason = prompt('Please provide a reason for rejection:');
+                    if (reason && reason.trim()) {
+                        rejectTimesheet(timesheetId, reason.trim());
+                    }
+                });
+            });
+
+            async function approveTimesheet(timesheetId) {
+                try {
+                    const response = await fetch(`/api/timesheets/${timesheetId}/approve`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        ReversideApp.showNotification('Timesheet approved successfully!', 'success');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    console.error('Error approving timesheet:', error);
+                    ReversideApp.showNotification('Error: ' + error.message, 'error');
+                }
+            }
+
+            async function rejectTimesheet(timesheetId, reason) {
+                try {
+                    const response = await fetch(`/api/timesheets/${timesheetId}/reject`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ rejection_reason: reason })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        ReversideApp.showNotification('Timesheet rejected successfully!', 'success');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    console.error('Error rejecting timesheet:', error);
+                    ReversideApp.showNotification('Error: ' + error.message, 'error');
+                }
+            }
+        });
+    </script>
+
+    <style>
+        .timesheets-page {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: 1rem;
+        }
+
+        .page-header h1 {
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--medium-gray);
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            padding: 0.5rem;
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .filter-tab {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            text-decoration: none;
+            color: var(--medium-gray);
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .filter-tab:hover {
+            color: var(--primary-blue);
+            background-color: var(--light-gray);
+        }
+
+        .filter-tab.active {
+            color: var(--primary-blue);
+            background-color: #dbeafe;
+        }
+
+        .timesheets-table-container {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .employee-info strong {
+            color: var(--dark-gray);
+        }
+
+        .employee-info small {
+            color: var(--medium-gray);
+        }
+
+        .hours-badge {
+            background: var(--primary-blue);
+            color: var(--white);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding: 1rem;
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .pagination-info {
+            color: var(--medium-gray);
+            font-weight: 500;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--medium-gray);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--border-color);
+        }
+
+        .empty-state h3 {
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .filter-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .pagination {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</body>
+</html>
