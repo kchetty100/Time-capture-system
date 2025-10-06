@@ -70,7 +70,7 @@
 
         <form id="timesheetForm" class="timesheet-form">
             <input type="hidden" id="timesheetId" value="<%= timesheet ? timesheet.id : '' %>">
-            <input type="hidden" id="monthYear" value="<%= monthYear %>">
+            <input type="hidden" id="monthYear" value="<%= typeof monthYear !== 'undefined' ? monthYear : new Date().toISOString().slice(0, 7) %>">
             <input type="hidden" id="weekEnding" value="<%= weekEnding %>">
 
             <!-- Monthly Time Capture Layout -->
