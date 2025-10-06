@@ -106,9 +106,6 @@
                                 <th>Time In</th>
                                 <th>Time Out</th>
                                 <th>Total Hours</th>
-                                <th>Time In</th>
-                                <th>Time Out</th>
-                                <th>Total Hours</th>
                                 <th>Daily Total</th>
                                 <th>Week Total</th>
                                 <th>Description / Task</th>
@@ -159,22 +156,13 @@
                                     <td class="day-cell"><%= dayOfWeek %></td>
                                     <td class="date-cell"><%= currentDate.toLocaleDateString('en-CA') %></td>
                                     <td class="time-cell">
-                                        <input type="time" class="time-input" name="time_in_1_<%= day %>" value="<%= defaultTimeIn %>">
+                                        <input type="time" class="time-input" name="time_in_<%= day %>" value="<%= defaultTimeIn %>">
                                     </td>
                                     <td class="time-cell">
-                                        <input type="time" class="time-input" name="time_out_1_<%= day %>" value="<%= defaultTimeOut %>">
+                                        <input type="time" class="time-input" name="time_out_<%= day %>" value="<%= defaultTimeOut %>">
                                     </td>
                                     <td class="hours-cell">
-                                        <input type="number" class="hours-input" name="hours_1_<%= day %>" value="<%= totalHours > 0 ? totalHours.toFixed(2) : defaultHours %>" step="0.01" min="0" max="24">
-                                    </td>
-                                    <td class="time-cell">
-                                        <input type="time" class="time-input" name="time_in_2_<%= day %>" value="<%= isWeekend ? '00:00' : '' %>">
-                                    </td>
-                                    <td class="time-cell">
-                                        <input type="time" class="time-input" name="time_out_2_<%= day %>" value="<%= isWeekend ? '00:00' : '' %>">
-                                    </td>
-                                    <td class="hours-cell">
-                                        <input type="number" class="hours-input" name="hours_2_<%= day %>" value="<%= isWeekend ? '0.00' : '0.00' %>" step="0.01" min="0" max="24">
+                                        <input type="number" class="hours-input" name="hours_<%= day %>" value="<%= totalHours > 0 ? totalHours.toFixed(2) : defaultHours %>" step="0.01" min="0" max="24">
                                     </td>
                                     <td class="daily-total-cell">
                                         <span class="daily-total"><%= totalHours.toFixed(2) %></span>
@@ -604,13 +592,13 @@
         .day-cell {
             font-weight: 600;
             color: var(--dark-gray);
-            width: 8%;
+            width: 10%;
         }
 
         .date-cell {
             font-weight: 500;
             color: var(--primary-blue);
-            width: 10%;
+            width: 12%;
         }
 
         .time-input, .hours-input, .description-input {
@@ -636,27 +624,27 @@
         }
 
         .time-cell {
-            width: 6%;
+            width: 10%;
         }
 
         .hours-cell {
-            width: 5%;
+            width: 8%;
         }
 
         .daily-total-cell {
-            width: 6%;
+            width: 8%;
         }
 
         .week-total-cell {
-            width: 6%;
+            width: 8%;
         }
 
         .description-cell {
-            width: 35%;
+            width: 30%;
         }
 
         .actions-cell {
-            width: 3%;
+            width: 4%;
         }
 
         .daily-total, .week-total {
@@ -1005,10 +993,9 @@
                 const row = input.closest('.timesheet-row');
                 const date = row.getAttribute('data-date');
                 
-                // Get hours from both time periods
-                const hours1 = parseFloat(row.querySelector('input[name*="hours_1_"]').value) || 0;
-                const hours2 = parseFloat(row.querySelector('input[name*="hours_2_"]').value) || 0;
-                const dailyTotal = hours1 + hours2;
+                // Get hours from the single time period
+                const hours = parseFloat(row.querySelector('input[name*="hours_"]').value) || 0;
+                const dailyTotal = hours;
                 
                 // Update daily total display
                 const dailyTotalElement = row.querySelector('.daily-total');
@@ -1164,33 +1151,19 @@
                     const date = row.getAttribute('data-date');
                     const dayOfWeek = row.querySelector('.day-cell').textContent.trim();
                     
-                    // Get first time period
-                    const timeIn1 = row.querySelector('input[name*="time_in_1_"]').value;
-                    const timeOut1 = row.querySelector('input[name*="time_out_1_"]').value;
-                    const hours1 = parseFloat(row.querySelector('input[name*="hours_1_"]').value) || 0;
-                    const description1 = row.querySelector('input[name*="description_"]').value.trim();
-                    
-                    // Get second time period
-                    const timeIn2 = row.querySelector('input[name*="time_in_2_"]').value;
-                    const timeOut2 = row.querySelector('input[name*="time_out_2_"]').value;
-                    const hours2 = parseFloat(row.querySelector('input[name*="hours_2_"]').value) || 0;
+                    // Get time period data
+                    const timeIn = row.querySelector('input[name*="time_in_"]').value;
+                    const timeOut = row.querySelector('input[name*="time_out_"]').value;
+                    const hours = parseFloat(row.querySelector('input[name*="hours_"]').value) || 0;
+                    const description = row.querySelector('input[name*="description_"]').value.trim();
                     
                     // Only add entries if there are hours worked
-                    if (hours1 > 0) {
+                    if (hours > 0) {
                         timeEntries.push({
                             project: clientName || 'Work', // Use client name as project or default to 'Work'
                             date: date,
-                            hours: hours1,
-                            description: description1 || `${dayOfWeek} work`
-                        });
-                    }
-                    
-                    if (hours2 > 0) {
-                        timeEntries.push({
-                            project: clientName || 'Work', // Use client name as project or default to 'Work'
-                            date: date,
-                            hours: hours2,
-                            description: description1 || `${dayOfWeek} work (Period 2)`
+                            hours: hours,
+                            description: description || `${dayOfWeek} work`
                         });
                     }
                 });
