@@ -20,6 +20,18 @@ router.get('/test', (req, res) => {
   });
 });
 
+// Test route (no auth for debugging)
+router.get('/debug', (req, res) => {
+  res.json({ 
+    message: 'Admin debug route working', 
+    user: req.user,
+    session: req.session,
+    hasSession: !!req.session,
+    hasUserId: !!req.session?.userId,
+    userRole: req.session?.userRole
+  });
+});
+
 // Apply authentication middleware to all other routes
 router.use(requireAuth);
 router.use(requireAdmin);

@@ -54,11 +54,29 @@ router.post('/login', [
     req.session.userRole = user.role;
     req.session.userName = user.name;
 
+    console.log('Session set:', {
+      userId: req.session.userId,
+      userRole: req.session.userRole,
+      userName: req.session.userName
+    });
+
     // Redirect based on role
     const redirectTo = user.role === 'admin' ? '/admin' : '/employee';
     console.log('Login successful, redirecting to:', redirectTo);
     console.log('User role:', user.role);
-    res.redirect(redirectTo);
+    
+    // Save session before redirect
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.render('auth/login', {
+          title: 'Login - REVERSIDE Time Tracker',
+          error: 'Session error. Please try again.',
+          email: req.body.email
+        });
+      }
+      res.redirect(redirectTo);
+    });
 
   } catch (error) {
     console.error('Login error:', error);
