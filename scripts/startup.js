@@ -31,4 +31,14 @@ try {
           // Don't exit here, app can still run
         }
 
+        // Fix monthly schema if needed
+        console.log('🔧 Checking monthly schema...');
+        try {
+          execSync('node scripts/fix-monthly-schema.js', { stdio: 'inherit' });
+          console.log('✅ Monthly schema check completed');
+        } catch (error) {
+          console.error('❌ Monthly schema fix failed:', error.message);
+          // Don't exit here, app can still run
+        }
+
 console.log('✅ Startup completed successfully');
