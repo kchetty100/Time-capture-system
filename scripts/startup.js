@@ -41,16 +41,14 @@ try {
           // Don't exit here, app can still run
         }
 
-        // Create test data if in development
-        if (process.env.NODE_ENV !== 'production') {
-          console.log('🧪 Creating test data...');
-          try {
-            execSync('node scripts/create-test-data.js', { stdio: 'inherit' });
-            console.log('✅ Test data creation completed');
-          } catch (error) {
-            console.error('❌ Test data creation failed:', error.message);
-            // Don't exit here, app can still run
-          }
+        // Create test data (run in both development and production)
+        console.log('🧪 Creating test data...');
+        try {
+          execSync('node scripts/create-test-data.js', { stdio: 'inherit' });
+          console.log('✅ Test data creation completed');
+        } catch (error) {
+          console.error('❌ Test data creation failed:', error.message);
+          // Don't exit here, app can still run
         }
 
 console.log('✅ Startup completed successfully');
