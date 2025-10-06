@@ -53,9 +53,10 @@ body {
 
 .header-content {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     padding: 1rem 0;
+    gap: 2rem;
 }
 
 .logo h1 {
@@ -92,6 +93,7 @@ body {
     display: flex;
     align-items: center;
     gap: 2rem;
+    margin-left: auto;
 }
 
 .user-info {
