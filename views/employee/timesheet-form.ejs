@@ -510,12 +510,13 @@
             box-shadow: var(--shadow);
             overflow-x: auto;
             margin-bottom: 1rem;
+            max-width: 100vw;
         }
 
         .timesheet-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 1200px;
+            min-width: 1600px;
         }
 
         .timesheet-table th {
@@ -584,13 +585,13 @@
         .day-cell {
             font-weight: 600;
             color: var(--dark-gray);
-            min-width: 80px;
+            min-width: 100px;
         }
 
         .date-cell {
             font-weight: 500;
             color: var(--primary-blue);
-            min-width: 100px;
+            min-width: 120px;
         }
 
         .time-input, .hours-input, .description-input {
@@ -603,15 +604,15 @@
         }
 
         .time-input {
-            min-width: 80px;
+            min-width: 100px;
         }
 
         .hours-input {
-            min-width: 60px;
+            min-width: 80px;
         }
 
         .description-input {
-            min-width: 200px;
+            min-width: 350px;
             text-align: left;
         }
 
@@ -670,6 +671,37 @@
             font-size: 1.1rem;
             font-weight: 600;
             color: var(--primary-blue);
+        }
+
+        /* Responsive design for wider table */
+        @media (min-width: 1400px) {
+            .timesheet-table {
+                min-width: 1800px;
+            }
+            
+            .description-input {
+                min-width: 400px;
+            }
+        }
+
+        @media (min-width: 1600px) {
+            .timesheet-table {
+                min-width: 2000px;
+            }
+            
+            .description-input {
+                min-width: 450px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .timesheet-table {
+                min-width: 1400px;
+            }
+            
+            .description-input {
+                min-width: 300px;
+            }
         }
 
         .time-entry-item {
