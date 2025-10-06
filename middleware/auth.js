@@ -10,20 +10,29 @@ const requireAuth = (req, res, next) => {
     return res.status(401).json({ error: 'Authentication required' });
   }
   
-  return res.redirect('/login');
+  return res.redirect('/auth/login');
 };
 
 // Check if user is admin
 const requireAdmin = (req, res, next) => {
+  console.log('requireAdmin middleware:', {
+    hasSession: !!req.session,
+    userId: req.session?.userId,
+    userRole: req.session?.userRole,
+    url: req.url
+  });
+  
   if (req.session && req.session.userId && req.session.userRole === 'admin') {
+    console.log('Admin access granted');
     return next();
   }
   
+  console.log('Admin access denied, redirecting to login');
   if (req.xhr || req.headers.accept?.indexOf('json') > -1) {
     return res.status(403).json({ error: 'Admin access required' });
   }
   
-  return res.redirect('/login');
+  return res.redirect('/auth/login');
 };
 
 // Check if user is employee
@@ -36,7 +45,7 @@ const requireEmployee = (req, res, next) => {
     return res.status(403).json({ error: 'Employee access required' });
   }
   
-  return res.redirect('/login');
+  return res.redirect('/auth/login');
 };
 
 // Load user data into request

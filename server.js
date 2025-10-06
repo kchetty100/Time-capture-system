@@ -8,7 +8,7 @@ require('dotenv').config();
 const db = require('./config/database-sqlite');
 const authRoutes = require('./routes/auth');
 const employeeRoutes = require('./routes/employee');
-const adminRoutes = require('./routes/admin-simple');
+const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
 const { loadUser } = require('./middleware/auth');
 
