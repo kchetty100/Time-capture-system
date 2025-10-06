@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const db = require('../config/database-sqlite');
 
 async function quickFix() {

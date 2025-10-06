@@ -40,7 +40,8 @@ router.post('/login', [
       });
     }
 
-    if (!user.is_active) {
+    // Check if user is active (if is_active column exists)
+    if (user.is_active === false) {
       return res.render('auth/login', {
         title: 'Login - REVERSIDE Time Tracker',
         error: 'Account is deactivated. Please contact administrator.',
