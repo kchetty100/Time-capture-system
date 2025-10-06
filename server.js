@@ -29,10 +29,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS in production
+    secure: false, // Disable secure for now to fix session issues
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true, // Security: prevent XSS
-    sameSite: 'strict' // Security: prevent CSRF
+    sameSite: 'lax' // More permissive for Railway
   }
 }));
 

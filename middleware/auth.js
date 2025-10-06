@@ -50,17 +50,28 @@ const requireEmployee = (req, res, next) => {
 
 // Load user data into request
 const loadUser = async (req, res, next) => {
+  console.log('loadUser middleware:', {
+    hasSession: !!req.session,
+    userId: req.session?.userId,
+    userRole: req.session?.userRole,
+    url: req.url
+  });
+  
   if (req.session && req.session.userId) {
     try {
       const user = await userRepository.findById(req.session.userId);
       if (user) {
         req.user = user;
+        console.log('User loaded successfully:', user.name);
       } else {
+        console.log('User not found, destroying session');
         req.session.destroy();
       }
     } catch (error) {
       console.error('Error loading user:', error);
     }
+  } else {
+    console.log('No session or userId found');
   }
   next();
 };
